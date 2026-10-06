@@ -1,0 +1,2193 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>CampusCore</title>
+<link rel="manifest" href="data:application/manifest+json,{%22name%22:%22AI%20%26%20DS%20Student%20Records%22,%22short_name%22:%22Students%22,%22start_url%22:%22.%22,%22display%22:%22standalone%22,%22background_color%22:%22%230f172a%22,%22theme_color%22:%22%232563eb%22}">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<!-- Firebase Sign In / Sign Up — opt-in only. The app now boots straight
+     into local/offline mode by default; this overlay only opens when the
+     person taps "Sign in for cloud sync" (added by addCloudSignInButton()). -->
+<div class="sheet-overlay" id="authOverlay">
+  <div class="sheet">
+    <div class="sheet-head"><h2>🎓 CampusCore Sign In</h2><button type="button" class="icon-btn" id="authCloseBtn">✕</button></div>
+    <div class="auth-tabs">
+      <button type="button" id="authTabSignin" class="active">Sign In</button>
+      <button type="button" id="authTabSignup">Create Account</button>
+    </div>
+    <div class="field">
+      <label>Email</label>
+      <input type="email" id="authEmail" placeholder="you@college.edu" autocomplete="username">
+    </div>
+    <div class="field">
+      <label>Password</label>
+      <input type="password" id="authPassword" placeholder="Password" autocomplete="current-password">
+    </div>
+    <div class="field" id="authRoleField" style="display:none;">
+      <label>Your Name</label>
+      <input type="text" id="authName" placeholder="Full name">
+      <label style="margin-top:10px;">Role</label>
+      <select id="authRole">
+        <option value="faculty">Faculty</option>
+        <option value="hod">HOD / Admin</option>
+      </select>
+      <div class="arrear-count-note">Anyone can pick HOD/Admin at sign-up for now — tighten this later if needed (see setup notes delivered with this file).</div>
+    </div>
+    <div id="authError"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-primary" id="authSubmitBtn" style="width:100%;">Sign In</button>
+    </div>
+    <div style="display:flex;align-items:center;gap:10px;margin:14px 0;color:var(--text-dim);font-size:12px;">
+      <div style="flex:1;height:1px;background:var(--border);"></div>or<div style="flex:1;height:1px;background:var(--border);"></div>
+    </div>
+    <button type="button" class="btn btn-ghost" id="authGoogleBtn" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;">
+      <svg width="18" height="18" viewBox="0 0 18 18"><path fill="#4285F4" d="M17.64 9.2c0-.64-.06-1.25-.16-1.84H9v3.48h4.84a4.14 4.14 0 0 1-1.8 2.72v2.26h2.9c1.7-1.57 2.7-3.88 2.7-6.62z"/><path fill="#34A853" d="M9 18c2.43 0 4.47-.8 5.96-2.18l-2.9-2.26c-.8.54-1.84.86-3.06.86-2.35 0-4.34-1.59-5.05-3.72H.98v2.33A9 9 0 0 0 9 18z"/><path fill="#FBBC05" d="M3.95 10.7A5.4 5.4 0 0 1 3.67 9c0-.59.1-1.17.28-1.7V4.97H.98A9 9 0 0 0 0 9c0 1.45.35 2.83.98 4.03l2.97-2.33z"/><path fill="#EA4335" d="M9 3.58c1.32 0 2.51.46 3.44 1.35l2.58-2.58C13.46.89 11.43 0 9 0A9 9 0 0 0 .98 4.97L3.95 7.3C4.66 5.17 6.65 3.58 9 3.58z"/></svg>
+      Sign in with Google
+    </button>
+    <div id="authStatus"></div>
+  </div>
+</div>
+
+<!-- Shown once, right after a brand-new Google account's first sign-in, to
+     pick Faculty vs HOD/Admin (email/password sign-up asks for this inline;
+     Google sign-in has no form to attach it to, so it's a separate step). -->
+<div class="sheet-overlay" id="googleRoleOverlay">
+  <div class="sheet" style="max-width:380px;">
+    <div class="sheet-head"><h2>👋 Welcome</h2></div>
+    <p style="font-size:13.5px;color:var(--text-dim);margin-top:0;">First time signing in with this Google account — what's your role?</p>
+    <div class="field">
+      <label>Your Name</label>
+      <input type="text" id="googleRoleName" placeholder="Full name">
+    </div>
+    <div class="field">
+      <label>Role</label>
+      <select id="googleRoleSelect">
+        <option value="faculty">Faculty</option>
+        <option value="hod">HOD / Admin</option>
+      </select>
+    </div>
+    <div id="googleRoleError" style="color:var(--danger);font-size:12.5px;min-height:1.2em;"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-primary" id="googleRoleSaveBtn" style="width:100%;">Continue</button>
+    </div>
+  </div>
+</div>
+
+<div class="app">
+  <header class="top">
+    <div class="row1">
+      <h1>CampusCore<span class="sub" id="yearLabel">Loading…</span></h1>
+      <div style="display:flex;gap:6px;flex:none;align-items:center;" id="headerIconGroup">
+        <button class="icon-btn" id="fontMinusBtn" title="Decrease font size" style="font-size:12px;">A−</button>
+        <button class="icon-btn" id="fontPlusBtn" title="Increase font size" style="font-size:12px;">A+</button>
+        <button class="icon-btn" id="themeBtn" title="Toggle theme">🌓</button>
+      </div>
+    </div>
+    <div id="headerInstitutionInfo" style="display:none;"></div>
+    <!-- Grouped top-level nav (5 buttons instead of 9) — each group that
+         has more than one screen inside it opens a second row of pill tabs
+         (#subNav) right below for the actual screens, so the app still
+         reaches every view without a wall of tabs up front. See
+         NAV_GROUPS / switchView in the JS for how these connect. -->
+    <div class="tabs main-nav" id="mainNav">
+      <button class="tab main-tab active" data-group="dashboard">🏠 Dashboard</button>
+      <button class="tab main-tab" data-group="people">👥 People</button>
+      <button class="tab main-tab" data-group="schedule">🗓️ Schedule</button>
+      <button class="tab main-tab" data-group="work">✅ Work</button>
+      <button class="tab main-tab hod-only" data-group="admin">📊 Admin</button>
+    </div>
+    <div class="tabs sub-nav" id="subNav" style="display:none;"></div>
+  </header>
+
+  <!-- ================= DASHBOARD VIEW ================= -->
+  <div id="view-dashboard" class="view">
+    <div class="stats" id="dashStats"></div>
+    <div id="dashSettingsBanner"></div>
+    <div class="dash-section">
+      <div class="dash-section-head">Quick Actions</div>
+      <div class="dash-quick-actions">
+        <button class="btn btn-ghost hod-only" id="qaMarkAttendanceBtn">🗓️ Enter Today's Attendance</button>
+        <button class="btn btn-ghost hod-only" id="qaShareAttendanceBtn">📤 Share Today's Attendance</button>
+        <button class="btn btn-ghost hod-only" id="qaQuickCountBtn">🔢 Quick Attendance Count</button>
+        <button class="btn btn-ghost" data-goto="students">🎓 Manage Students</button>
+        <button class="btn btn-ghost" data-goto="faculties">🧑‍🏫 Manage Faculties</button>
+        <button class="btn btn-ghost hod-only" data-goto="hod">📊 Open HOD View</button>
+      </div>
+    </div>
+    <div class="dash-section">
+      <div class="dash-section-head">Today's Attendance Snapshot — <span id="dashSnapshotDeptLabel"></span><span id="dashDateLabel"></span></div>
+      <div id="dashAttendance"></div>
+    </div>
+    <div class="dash-section">
+      <div class="dash-section-head">
+        Overall Attendance — <span id="dashOverallDeptLabel"></span>All Included Years
+        <label style="float:right;font-size:12.5px;font-weight:600;display:flex;align-items:center;gap:6px;cursor:pointer;">
+          <input type="checkbox" id="dashOverallInclude1st" style="width:auto;" checked> Include 1st Year
+        </label>
+      </div>
+      <div id="dashDonutOverallWrap" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;padding:6px 0;"></div>
+    </div>
+
+    <!-- The three "pick any combination" breakdowns below are the heaviest
+         part of this screen (they each recompute a donut across whatever's
+         ticked) and the least-used at a glance — collapsed by default so
+         the dashboard opens fast and uncluttered, with each one's numbers
+         only computed the first time it's actually opened. -->
+    <details class="dash-section dash-collapsible" id="dashYearDetails">
+      <summary class="dash-section-head">Attendance by Year — pick any combination</summary>
+      <div id="dashDonutYearsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin:10px 0;"></div>
+      <div id="dashDonutWrap" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;padding:6px 0;"></div>
+    </details>
+    <details class="dash-section dash-collapsible" id="dashDeptDetails">
+      <summary class="dash-section-head">Attendance by Department — pick any combination</summary>
+      <div id="dashDonutDeptsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin:10px 0;"></div>
+      <div class="arrear-count-note" style="margin:0 0 4px;">Years to include <button type="button" class="link-btn" id="dashDonutDeptYearsAllBtn" style="float:right;">All / None</button></div>
+      <div id="dashDonutDeptYearsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin-bottom:10px;"></div>
+      <div id="dashDonutDeptWrap" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;padding:6px 0;"></div>
+    </details>
+    <details class="dash-section dash-collapsible" id="dashSubjectDetails">
+      <summary class="dash-section-head">Attendance by Subject (Today) — pick any combination</summary>
+      <div id="dashDonutSubjectsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;margin:10px 0;"></div>
+      <div id="dashDonutSubjectWrap" style="display:flex;align-items:center;gap:18px;flex-wrap:wrap;justify-content:center;padding:6px 0;"></div>
+    </details>
+  </div>
+
+  <!-- ================= SETTINGS VIEW ================= -->
+  <div id="view-settings" class="view" style="display:none;">
+    <div class="dash-section">
+      <div class="dash-section-head">🏫 Institution Details <span style="color:var(--danger);font-weight:700;font-size:11px;">* mandatory</span></div>
+      <div class="field">
+        <label>College Name *</label>
+        <input type="text" id="set_collegeName" placeholder="e.g. XYZ Institute of Technology">
+        <div class="field-error" id="set_err_collegeName"></div>
+      </div>
+      <div class="field">
+        <label>Department Name *</label>
+        <input type="text" id="set_deptName" placeholder="e.g. Computer Science & Engineering">
+        <div class="field-error" id="set_err_deptName"></div>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>University / Affiliation</label>
+          <input type="text" id="set_university" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label>Academic Year *</label>
+          <input type="text" id="set_academicYear" placeholder="e.g. 2026-27">
+          <div class="field-error" id="set_err_academicYear"></div>
+        </div>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>HOD Name</label>
+          <input type="text" id="set_hodName" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label>Principal Name</label>
+          <input type="text" id="set_principalName" placeholder="Optional">
+        </div>
+      </div>
+      <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin:4px 0 14px;cursor:pointer;">
+        <input type="checkbox" id="set_showHeaderInfo" style="width:auto;"> Show College & Department name at the top of every screen
+      </label>
+      <div class="field">
+        <label>Working Days</label>
+        <div class="arrear-count-note" style="margin-bottom:6px;">Monday–Friday are working days by default. Tick Saturday and/or Sunday only for the days they're actually made working (a compensatory class, etc.) — nothing already scheduled or marked on them is ever lost by unticking.</div>
+        <div id="set_workingDaysGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;"></div>
+      </div>
+      <div class="field">
+        <label>⏰ Daily Attendance Reminder</label>
+        <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;margin:4px 0 8px;cursor:pointer;">
+          <input type="checkbox" id="set_attReminderEnabled" style="width:auto;"> Notify me if today's attendance hasn't been entered yet
+        </label>
+        <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;align-items:end;">
+          <div class="field" style="margin-bottom:0;">
+            <label style="font-size:11px;">Remind at</label>
+            <input type="time" id="set_attReminderTime" value="10:00">
+          </div>
+        </div>
+        <div class="arrear-count-note">Checks once a minute while the app is open in your browser tab — it can't notify you if the app/tab is fully closed. Your browser will ask for notification permission the first time you turn this on.</div>
+      </div>
+      <div class="field">
+        <label>🔒 HOD PIN / Password</label>
+        <input type="password" id="set_hodPin" autocomplete="new-password" placeholder="Leave blank for no lock">
+        <div class="arrear-count-note">Guards HOD-only actions in this app — currently, moving a subject from one semester to another, and restoring a backup (which replaces all data on the device). Leave blank to leave those actions open to anyone. <b>Ships set to 1234 by default — change this now.</b></div>
+      </div>
+      <button type="button" class="btn btn-primary" id="settingsSaveBtn" style="width:100%;justify-content:center;">💾 Save Settings</button>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">
+        📊 Dashboard & Report Scope
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Choose which departments and years count toward the Dashboard's totals, the HOD view and the Principal Report. Turning a department or year off here doesn't delete anything — it just leaves it out of these combined totals.</div>
+        </details>
+      </div>
+      <button type="button" class="btn btn-ghost" id="dashScopeBtn" style="width:100%;justify-content:center;">⚙️ Include / Exclude Departments &amp; Years</button>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">
+        🔗 Combined Classes
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">For classes taught together across departments — commonly 1st Year (all departments together), or pairs like AI &amp; DS + CSBS, IT + CS. Pick any combination you like; it's entirely optional per session — the normal "🗓️ Attendance" button still marks a single department/year as before, and "🔗 Combined Attendance" only appears when a group is defined for that department. Marks are still saved into each department's own attendance records, so the HOD and Principal Report always show each department separately — combining is only a convenience for marking, it never merges HOD or Principal data.</div>
+        </details>
+        <button class="btn btn-primary" id="combinedAddBtn" style="float:right;padding:6px 12px;font-size:12.5px;">+ Add Combined Class</button>
+      </div>
+      <div id="combinedGroupsList"></div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">🔤 Display — App Font Size</div>
+      <div class="font-scale-row">
+        <button type="button" class="btn btn-ghost" id="fontMinusBtnSettings">A −</button>
+        <span id="fontScaleLabel">100%</span>
+        <button type="button" class="btn btn-ghost" id="fontPlusBtnSettings">A +</button>
+        <button type="button" class="link-btn" id="fontResetBtn">Reset</button>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">ℹ️ About</div>
+      <div class="detail-row"><div class="k">App Version</div><div class="v" id="aboutVersion"></div></div>
+      <div class="detail-row"><div class="k">Departments</div><div class="v" id="aboutDeptCount"></div></div>
+      <div style="display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;">
+        <button type="button" class="btn btn-ghost" id="viewHistoryBtn" style="flex:1;min-width:160px;">🕘 Version History</button>
+        <button type="button" class="btn btn-ghost" id="viewManualBtn" style="flex:1;min-width:160px;">📖 User Manual</button>
+      </div>
+      <button type="button" class="btn btn-ghost" id="resetWarningsBtn" style="width:100%;justify-content:center;margin-top:10px;">🔔 Re-enable dismissed warnings</button>
+    </div>
+  </div>
+
+  <!-- Version History -->
+  <div class="sheet-overlay" id="historyOverlay">
+    <div class="sheet" style="max-width:600px;">
+      <div class="sheet-head"><h2>🕘 Version History</h2><button class="icon-btn" data-close="historyOverlay">✕</button></div>
+      <div id="historyList"></div>
+    </div>
+  </div>
+
+  <!-- User Manual -->
+  <div class="sheet-overlay" id="manualOverlay">
+    <div class="sheet" style="max-width:680px;">
+      <div class="sheet-head"><h2>📖 User Manual</h2><button class="icon-btn" data-close="manualOverlay">✕</button></div>
+      <div id="manualBody">
+        <details open>
+          <summary>🏠 Dashboard</summary>
+          <p>Snapshot of today's attendance, and four premium progress-ring donuts: Overall (all included years, with a toggle to include/exclude 1st Year), Attendance by Year (pick any combination of years), Attendance by Department (pick any combination of departments), and Attendance by Subject (today's subjects, from the timetable). Tap ⚙️ Include/Exclude to control which departments/years count toward the totals. Every section here can be collapsed using the ▾ button in its top-right corner.</p>
+        </details>
+        <details>
+          <summary>🎓 Students</summary>
+          <p>Add, edit, search, filter and sort students. Sort by S.No, Name, Register No, CGPA, Arrears, Attendance %, Category, Gender, Father's Name or Phone — with an Asc/Desc toggle. In the Add/Edit form, Gender is asked first — Category (Day Scholar / College Hostel / Private Hostel) only unlocks after that, and only offers the Boys or Girls version matching the Gender picked. Tap ⚠️ Missing Data to see incomplete records and edit them directly. Tap 🗓️ Attendance to mark a period; tapping a student's name there opens their full profile.</p>
+        </details>
+        <details>
+          <summary>🧑‍🏫 Faculties</summary>
+          <p>Manage faculty records, subjects handled (auto-fetched from the Subjects list), and mark daily faculty attendance/OD.</p>
+        </details>
+        <details>
+          <summary>📅 Timetable</summary>
+          <p>Build each department/year's weekly timetable — subject code, name and faculty auto-fill from what's already on file. Configure period timings, short break and lunch generally, per year, or per weekday (e.g. a different Friday lunch slot), with a custom period order.</p>
+        </details>
+        <details>
+          <summary>📊 HOD / Principal Report</summary>
+          <p>Generate a shareable attendance report for any combination of years and periods — total/present/absent/OD breakdown, 3+ day continuous-leave list and below-threshold attendance list, all with user-defined thresholds.</p>
+        </details>
+        <details>
+          <summary>📚 Subjects &amp; Outcome-Based Education</summary>
+          <p>Manage the subject list per semester. Each subject's 📘 button opens Syllabus (topics, hours and pedagogy), Course Outcomes, and a CO–PO/PSO attainment matrix (0–3 per cell) with an auto-computed overall Attainment Value. PEO/PO/PSO are shared department-wide via "🎯 Dept PEO/PO/PSO".</p>
+        </details>
+        <details>
+          <summary>⚙️ Settings</summary>
+          <p>Set the mandatory institution details (College Name, Department Name, Academic Year) once — a banner on the Dashboard will remind you until they're filled in. Optionally show the College/Department name at the top of every screen. Adjust the app-wide font size with A−/A+ (also available as quick buttons in the header), check the current app version, browse the version history, or open this manual again.</p>
+        </details>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= STUDENTS VIEW ================= -->
+  <div id="view-students" class="view" style="display:none;">
+    <div class="tabs" id="deptTabs"></div>
+    <div class="tabs" id="tabs" style="margin-top:6px;"></div>
+
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input type="text" id="searchInput" placeholder="Search name, reg no, phone…">
+      </div>
+      <select class="filter" id="hostelFilter">
+        <option value="">All types</option>
+      </select>
+      <select class="filter" id="sortSelect">
+        <option value="sno">Sort: S.No</option>
+        <option value="name">Sort: Name</option>
+        <option value="regno" selected>Sort: Register No</option>
+        <option value="cgpa">Sort: CGPA</option>
+        <option value="arrears">Sort: Arrears</option>
+        <option value="attendance">Sort: Attendance %</option>
+        <option value="hostel">Sort: Category</option>
+        <option value="gender">Sort: Gender</option>
+        <option value="father">Sort: Father's Name</option>
+        <option value="phone">Sort: Phone</option>
+      </select>
+      <button class="btn btn-ghost" id="sortDirBtn" title="Toggle ascending/descending">⬆️ Asc</button>
+    </div>
+    <div class="toolbar toolbar-swipe">
+      <button class="btn btn-primary" id="attendanceBtn">🗓️ Attendance</button>
+      <button class="btn btn-ghost" id="combinedAttendanceBtn" style="display:none;">🔗 Combined Attendance</button>
+      <button class="btn btn-ghost" id="classTotalsBtn">🔢 Class Totals</button>
+      <details class="more-menu">
+        <summary class="btn btn-ghost">⋯ More</summary>
+        <div class="more-menu-body">
+          <button type="button" id="odReportBtn">🧾 OD Report</button>
+          <button type="button" id="missingBtn">⚠️ Missing Data</button>
+          <button type="button" id="subjectsBtn">📚 Subjects</button>
+          <button type="button" id="bulkAddBtn">📋 Bulk Add</button>
+          <button type="button" id="exportBtn">⭳ Export</button>
+          <button type="button" id="bulkSelectBtn">☑️ Select</button>
+        </div>
+      </details>
+    </div>
+
+    <div class="stats" id="statsRow"></div>
+
+    <div class="grid" id="grid"></div>
+    <div class="empty" id="emptyState" style="display:none;">
+      <div class="emoji">🗂️</div>
+      <div>No students match your search.</div>
+    </div>
+    <!-- Bulk action bar — appears once "☑️ Select" is on and at least one
+         student is ticked. Lets the HOD delete or re-categorize (Hosteller/
+         Day Scholar etc.) several students at once instead of one at a time. -->
+    <div class="bulk-bar" id="bulkBar" style="display:none;">
+      <span id="bulkBarCount">0 selected</span>
+      <div class="bulk-bar-actions">
+        <select id="bulkHostelSelect" style="max-width:150px;"></select>
+        <button type="button" class="btn btn-ghost" id="bulkApplyHostelBtn">🏷️ Set Category</button>
+        <button type="button" class="btn" id="bulkDeleteBtn" style="background:var(--danger);color:#fff;">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" id="bulkCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= FACULTIES VIEW ================= -->
+  <div id="view-faculties" class="view" style="display:none;">
+    <div class="tabs" id="facDeptTabs"></div>
+    <div class="toolbar">
+      <div class="search-wrap">
+        <input type="text" id="facSearchInput" placeholder="Search faculty name, phone…">
+      </div>
+      <button class="btn btn-ghost" id="facAttendanceBtn">🗓️ Faculty Attendance</button>
+      <button class="btn btn-ghost" id="facExportBtn">⭳ Export CSV</button>
+      <button class="btn btn-ghost" id="facBulkSelectBtn">☑️ Select</button>
+    </div>
+    <div class="stats" id="facStatsRow"></div>
+    <div class="grid" id="facGrid"></div>
+    <div class="empty" id="facEmptyState" style="display:none;">
+      <div class="emoji">🧑‍🏫</div>
+      <div>No faculty added yet for this department.</div>
+    </div>
+    <div class="bulk-bar" id="facBulkBar" style="display:none;">
+      <span id="facBulkBarCount">0 selected</span>
+      <div class="bulk-bar-actions">
+        <button type="button" class="btn" id="facBulkDeleteBtn" style="background:var(--danger);color:#fff;">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" id="facBulkCancelBtn">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= TIMETABLE VIEW ================= -->
+  <div id="view-timetable" class="view" style="display:none;">
+    <div class="tabs" id="ttDeptTabs"></div>
+    <div class="tabs" id="ttYearTabs" style="margin-top:6px;"></div>
+    <div class="tabs" id="ttDayTabs" style="margin-top:6px;"></div>
+
+    <div class="toolbar toolbar-swipe">
+      <button class="btn btn-ghost" id="ttTimingsBtn">⏱️ Period Timings</button>
+      <button class="btn btn-ghost" id="ttCopyBtn">📋 Copy From…</button>
+      <button class="btn btn-ghost" id="ttShareBtn">📤 Share Day</button>
+    </div>
+    <div class="toolbar toolbar-swipe">
+      <button class="btn btn-primary" id="ttGenerateBtn">🧮 Auto-Generate Timetable</button>
+      <button class="btn btn-ghost" id="ttMasterBtn">📋 Master Timetable</button>
+      <button class="btn btn-ghost" id="ttFacultyTtBtn">👤 Faculty Timetable</button>
+    </div>
+
+    <div id="ttRows"></div>
+
+    <div class="dash-section" id="ttAlarmSection">
+      <div class="dash-section-head">🔔 Period-Start Alarm</div>
+      <label style="display:flex;align-items:center;gap:10px;font-size:13.5px;font-weight:600;margin-bottom:12px;">
+        <input type="checkbox" id="ttAlarmToggle" style="width:auto;">
+        Alert me when a watched period is about to start
+      </label>
+      <div class="field-row">
+        <div class="field">
+          <label>Watch Faculty (optional)</label>
+          <select id="ttAlarmFaculty"><option value="">— Any faculty —</option></select>
+        </div>
+        <div class="field">
+          <label>Watch Subject (optional)</label>
+          <select id="ttAlarmSubject"><option value="">— Any subject —</option></select>
+        </div>
+      </div>
+      <div class="small-note" id="ttAlarmStatus" style="font-size:12px;color:var(--text-dim);">Checks the timetable every minute, only while this tab is open.</div>
+    </div>
+  </div>
+
+  <!-- ================= DIARY / EVENTS VIEW ================= -->
+  <div id="view-diary" class="view" style="display:none;">
+    <div class="dash-section">
+      <div class="dash-section-head">📔 Digital Diary & Event Calendar — <span id="diaryDeptLabel"></span></div>
+      <div class="field" style="max-width:260px;">
+        <label>Department</label>
+        <select id="diaryDeptSelect"></select>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">
+        <span id="diaryMonthLabel"></span>
+        <span style="float:right;display:flex;gap:6px;">
+          <button class="icon-btn" id="diaryPrevMonthBtn" title="Previous month">◀</button>
+          <button class="btn btn-ghost" id="diaryTodayBtn" style="padding:4px 10px;font-size:12px;">Today</button>
+          <button class="icon-btn" id="diaryNextMonthBtn" title="Next month">▶</button>
+        </span>
+      </div>
+      <div class="cal-grid" id="diaryCalGrid"></div>
+      <div class="cal-legend" id="diaryLegend" style="display:flex;flex-wrap:wrap;gap:10px;margin-top:10px;font-size:11.5px;color:var(--text-dim);"></div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">
+        Entries — <span id="diarySelectedDateLabel"></span>
+        <button class="btn btn-primary" id="diaryAddBtn" style="float:right;padding:6px 12px;font-size:12.5px;">+ Add Entry</button>
+      </div>
+      <div id="diaryDayList"></div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">🔔 Upcoming (next 14 days)</div>
+      <div id="diaryUpcomingList"></div>
+    </div>
+  </div>
+
+  <!-- ================= TASK CHECKLIST VIEW ================= -->
+  <div id="view-tasks" class="view" style="display:none;">
+    <div class="dash-section">
+      <div class="dash-section-head">✅ Task Checklist — <span id="tasksDeptLabel"></span></div>
+      <div class="field" style="max-width:260px;">
+        <label>Department</label>
+        <select id="tasksDeptSelect"></select>
+      </div>
+    </div>
+
+    <div class="dash-section">
+      <div class="dash-section-head">
+        <span id="tasksSummaryLabel"></span>
+        <button class="btn btn-primary" id="tasksAddBtn" style="float:right;padding:6px 12px;font-size:12.5px;">+ Add Task</button>
+      </div>
+      <div class="tabs" id="tasksStatusFilterTabs" style="margin:10px 0 4px;">
+        <button class="tab active" data-status-filter="all">All</button>
+        <button class="tab" data-status-filter="not_started">Not Started</button>
+        <button class="tab" data-status-filter="in_progress">In Progress</button>
+        <button class="tab" data-status-filter="completed">Completed</button>
+      </div>
+      <div id="tasksList"></div>
+    </div>
+  </div>
+
+  <!-- ================= INTERNAL MARKS (CIA) VIEW ================= -->
+  <div id="view-marks" class="view" style="display:none;">
+    <div class="dash-section">
+      <div class="dash-section-head">
+        📝 Internal Marks (CIA)
+        <button class="link-btn" id="marksManageComponentsBtn" style="float:right;">⚙️ Manage Components</button>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr 1.6fr;gap:12px;">
+        <div class="field">
+          <label>Department</label>
+          <select id="marksDeptSelect"></select>
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <select id="marksYearSelect"></select>
+        </div>
+        <div class="field">
+          <label>Subject</label>
+          <select id="marksSubjectSelect"></select>
+        </div>
+      </div>
+      <div class="small-note" style="font-size:12px;color:var(--text-dim);" id="marksComponentsNote"></div>
+      <div class="field-row" style="align-items:end;margin-top:8px;">
+        <div class="field" style="max-width:170px;">
+          <label>Convert Total To</label>
+          <select id="marksConvertPreset">
+            <option value="">— Not converted —</option>
+            <option value="20">Out of 20</option>
+            <option value="25">Out of 25</option>
+            <option value="30">Out of 30</option>
+            <option value="40">Out of 40</option>
+            <option value="50">Out of 50</option>
+            <option value="75">Out of 75</option>
+            <option value="100">Out of 100</option>
+            <option value="__custom__">Custom…</option>
+          </select>
+        </div>
+        <div class="field" id="marksConvertCustomWrap" style="max-width:130px;display:none;">
+          <label>Custom Max</label>
+          <input type="number" id="marksConvertCustom" min="1" step="0.5">
+        </div>
+      </div>
+    </div>
+    <div class="dash-section">
+      <div class="dash-section-head"><span id="marksSummaryLabel"></span></div>
+      <div style="overflow-x:auto;">
+        <table id="marksTable" style="width:100%;border-collapse:collapse;font-size:12.5px;"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= HOD VIEW ================= -->
+  <div id="view-hod" class="view" style="display:none;">
+    <div class="dash-section">
+      <div class="dash-section-head">Student Totals <button class="link-btn" id="hodScopeBtn" style="float:right;">⚙️ Include/Exclude</button></div>
+      <div class="stats" id="hodTotalStats"></div>
+      <div id="hodDeptBreakdown"></div>
+    </div>
+    <div class="dash-section" id="hodTodayAttSection">
+      <div class="dash-section-head">
+        Student Attendance — <span id="hodDateLabel"></span>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+        <button class="link-btn" id="todayAttShareBtn">📤 Share</button>
+        <button type="button" class="link-btn" id="todayAttYearsAllBtn">All / None</button>
+      </div>
+      <div class="field" style="min-width:0;margin-bottom:10px;">
+        <label>Departments <span style="font-weight:400;color:var(--text-dim);">— tick as many as you like to share together</span> <button type="button" class="link-btn" id="todayAttDeptsAllBtn" style="float:right;">All / None</button></label>
+        <div id="todayAttDeptsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;"></div>
+      </div>
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field">
+          <label>Date <button type="button" class="link-btn" id="todayAttDateTodayBtn" style="float:right;">Today</button></label>
+          <input type="date" id="todayAttDateSelect">
+        </div>
+      </div>
+      <div class="field" style="min-width:0;margin-bottom:10px;">
+        <label>Years <span style="font-weight:400;color:var(--text-dim);">— applied across every ticked department</span></label>
+        <div id="todayAttYearsGroup" style="display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;max-width:100%;box-sizing:border-box;"></div>
+      </div>
+      <div class="arrear-count-note" style="margin-bottom:8px;">Shows every period marked on the selected date, for the selected years, period-wise.</div>
+      <div class="field" id="todayAttSharePeriodsWrap" style="display:none;margin-bottom:8px;">
+        <label>Periods to share <button type="button" class="link-btn" id="todayAttSharePeriodsAllBtn" style="float:right;">All / None</button></label>
+        <div id="todayAttSharePeriodsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;"></div>
+        <div class="arrear-count-note">Only the ticked period(s) are included when you tap 📤 Share — the list above still shows every period marked today.</div>
+      </div>
+      <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin-bottom:8px;cursor:pointer;">
+        <input type="checkbox" id="todayAttIncludeTotalsChk" style="width:auto;">
+        Include cumulative Total/Present/% in the share summary
+      </label>
+      <div id="hodAttendanceOverview"></div>
+    </div>
+    <!-- Everything below is used less often than Student Totals / Student
+         Attendance above, so it's tucked behind collapsible headers instead
+         of all sitting open on one long page — tap a heading to expand it. -->
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">🧭 Live Student Status — Right Now</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">Where every student in a class is at this exact moment — in class with subject &amp; faculty, on OD (with type, and which sport if it's a Sports OD), or on Leave/Absent (with or without permission).</div>
+      </details>
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field">
+          <label>Department</label>
+          <select id="liveDeptSelect"></select>
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <select id="liveYearSelect"></select>
+        </div>
+        <div class="field">
+          <label>Search student</label>
+          <input type="text" id="liveSearchInput" placeholder="Name or reg. no...">
+        </div>
+      </div>
+      <div id="liveStatusBody"></div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">Today's Faculty Attendance</summary>
+      <div class="stats" id="hodFacultyStats"></div>
+      <div id="hodFacultyBreakdown"></div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">📘 Syllabus Coverage Monitor — Lesson Plan / Daily Class Record</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">How much of each subject's syllabus has actually been covered, topic by topic, against the faculty's own lesson plan.</div>
+      </details>
+      <div id="hodSyllabusCoverage"></div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">📋 Task Monitor — All Departments</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">Every task assigned to an individual student or faculty member, across every department — assignee, status, deadline and remarks, at a glance.</div>
+      </details>
+      <div class="field" style="max-width:220px;margin-bottom:10px;">
+        <label>Filter by status</label>
+        <select id="hodTaskStatusFilter">
+          <option value="all">All Statuses</option>
+          <option value="not_started">Not Started</option>
+          <option value="in_progress">In Progress</option>
+          <option value="completed">Completed</option>
+        </select>
+      </div>
+      <div id="hodTaskMonitor"></div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">📝 Minutes of Meeting (MoM)</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">Record of meetings — day-wise, with the exact time of each meeting kept separately.</div>
+      </details>
+      <div class="dash-quick-actions" style="margin-bottom:10px;">
+        <button class="btn btn-ghost" id="momAddBtn">➕ Add Meeting</button>
+      </div>
+      <div class="field-row" style="margin-bottom:10px;">
+        <div class="field">
+          <label>From date</label>
+          <input type="date" id="momFilterFrom">
+        </div>
+        <div class="field">
+          <label>To date</label>
+          <input type="date" id="momFilterTo">
+        </div>
+        <div class="field">
+          <label>Search</label>
+          <input type="text" id="momFilterSearch" placeholder="Title, attendees, minutes...">
+        </div>
+      </div>
+      <div id="momList"></div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">🗓️ Leave &amp; OD Report</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">Every student's or faculty member's OD history (reason &amp; date) and Absent days, split by with/without permission.</div>
+      </details>
+      <div class="dash-quick-actions">
+        <button class="btn btn-ghost" id="leaveReportBtn">🗓️ Open Leave &amp; OD Report</button>
+      </div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">📨 Report</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">Build a period-wise or daily attendance summary for the Principal — totals, on-duty breakup, continuous-leave list and low-attendance list.</div>
+      </details>
+      <div class="dash-quick-actions">
+        <button class="btn btn-primary" id="principalReportBtn">📨 Generate Report</button>
+      </div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">💾 Backup &amp; Restore</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">One file covers students, faculty, attendance, subjects, timetables and settings — everything on this device.</div>
+      </details>
+      <div class="dash-quick-actions">
+        <button class="btn btn-ghost" id="backupExportBtn">⬇️ Export Backup</button>
+        <button class="btn btn-ghost" id="backupImportBtn">⬆️ Import Backup</button>
+        <input type="file" id="backupFileInput" accept="application/json" style="display:none;">
+      </div>
+    </details>
+    <details class="dash-section dash-collapsible">
+      <summary class="dash-section-head">🗄️ Archive Old Attendance</summary>
+      <details class="info-tip" style="margin:2px 0 10px;"><summary title="What is this?">i</summary>
+        <div class="info-tip-body">Attendance keeps growing every day it's marked, and all of it is kept in the same record that syncs to the cloud on every edit — so after a few years this can make the app feel slower. Archiving moves attendance marked before a date you choose out of that live record and into a downloaded backup file, freeing it up. It's entirely optional and only affects attendance — students, faculty, marks, timetable etc. are never touched. Archived dates will no longer appear in reports, the Dashboard or OD Report — keep the downloaded file safe if you may ever need to look them up again.</div>
+      </details>
+      <div class="field" style="max-width:260px;">
+        <label>Archive attendance marked before</label>
+        <input type="date" id="archiveAttBeforeDate">
+      </div>
+      <button type="button" class="btn btn-ghost" id="archiveAttBtn">📦 Archive &amp; Remove</button>
+      <div class="arrear-count-note" id="archiveAttNote" style="margin-top:8px;"></div>
+    </details>
+  </div>
+</div>
+
+<button class="fab" id="addFab" title="Add student">+</button>
+<button class="fab" id="addFacFab" title="Add faculty" style="display:none;">+</button>
+<!-- Always-visible, app-wide shortcut to every screen and every HOD quick
+     action, with a live search box — so nothing in the app is more than
+     one tap plus a few letters away, no matter which tab you're currently
+     on. Complements (doesn't replace) the normal top nav and Dashboard's
+     own Quick Actions section. -->
+<button class="fab" id="quickAccessFab" title="Quick access — find anything" style="left:20px;right:auto;background:var(--surface-2);color:var(--text);border:1px solid var(--border);font-size:22px;">🔎</button>
+
+<!-- Quick Access — search/jump to any screen or action -->
+<div class="sheet-overlay" id="quickAccessOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2>🔎 Quick Access</h2>
+      <button class="icon-btn" data-close="quickAccessOverlay">✕</button>
+    </div>
+    <input type="text" id="quickAccessSearch" placeholder="Type to filter — e.g. \"attendance\", \"settings\"…" style="width:100%;padding:10px 12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:14.5px;margin-bottom:12px;">
+    <div id="quickAccessList" style="display:flex;flex-direction:column;gap:6px;max-height:60vh;overflow-y:auto;"></div>
+    <div id="quickAccessEmpty" class="no-data-note" style="display:none;">No match — try a different word.</div>
+  </div>
+</div>
+
+<!-- Reusable "are you sure?" overlay for the repeat overwrite warnings
+     (Class Totals vs per-student marking, Quick Count vs per-student
+     marking) — unlike a plain confirm(), it offers a "don't show this
+     warning again" checkbox so a HOD who deliberately always wants one
+     entry style over another isn't nagged every single time. -->
+<div class="sheet-overlay" id="warnConfirmOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2>⚠️ Are you sure?</h2>
+      <button class="icon-btn" id="warnConfirmCloseBtn">✕</button>
+    </div>
+    <div id="warnConfirmMessage" style="font-size:14px;line-height:1.5;margin-bottom:14px;"></div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;margin-bottom:14px;cursor:pointer;">
+      <input type="checkbox" id="warnConfirmSuppress" style="width:auto;">
+      Don't show this warning again
+    </label>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" id="warnConfirmCancelBtn">Cancel</button>
+      <button type="button" class="btn btn-primary" id="warnConfirmOkBtn">Continue</button>
+    </div>
+  </div>
+</div>
+
+<!-- Detail Sheet -->
+<div class="sheet-overlay" id="detailOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="detailName">Student</h2>
+      <button class="icon-btn" data-close="detailOverlay">✕</button>
+    </div>
+    <div id="detailBody"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="detailEditBtn">✏️ Edit</button>
+      <button class="btn btn-ghost" id="detailDeleteBtn" style="color:var(--danger);">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Form Sheet (Add/Edit) -->
+<div class="sheet-overlay" id="formOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="formTitle">Add Student</h2>
+      <button class="icon-btn" data-close="formOverlay">✕</button>
+    </div>
+    <form id="studentForm" novalidate>
+      <div class="field">
+        <label>Full Name *</label>
+        <input type="text" id="f_name" required>
+        <div class="field-error" id="err_name"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>S.No</label>
+          <input type="number" id="f_sno" min="1" step="1">
+          <div class="field-error" id="err_sno"></div>
+        </div>
+        <div class="field">
+          <label>Register Number</label>
+          <input type="text" id="f_regno" inputmode="numeric">
+          <div class="field-error" id="err_regno"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Gender</label>
+          <select id="f_gender">
+            <option value="">— Not set —</option>
+            <option>Male</option>
+            <option>Female</option>
+            <option>Transgender</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Category <span style="font-weight:400;color:var(--text-dim);">— pick Gender first</span></label>
+          <select id="f_hostel" disabled>
+            <option value="">— Not set —</option>
+          </select>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Student Phone</label>
+          <input type="text" id="f_phone" inputmode="numeric" placeholder="10-digit mobile">
+          <div class="field-error" id="err_phone"></div>
+        </div>
+        <div class="field">
+          <label>CGPA</label>
+          <input type="text" id="f_cgpa" inputmode="decimal" placeholder="0 – 10">
+          <div class="field-error" id="err_cgpa"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Father Name</label>
+          <input type="text" id="f_father">
+          <div class="field-error" id="err_father"></div>
+        </div>
+        <div class="field">
+          <label>Father Phone</label>
+          <input type="text" id="f_fatherphone" inputmode="numeric" placeholder="10-digit mobile">
+          <div class="field-error" id="err_fatherphone"></div>
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Mother Name</label>
+          <input type="text" id="f_mother">
+          <div class="field-error" id="err_mother"></div>
+        </div>
+        <div class="field">
+          <label>Mother Phone</label>
+          <input type="text" id="f_motherphone" inputmode="numeric" placeholder="10-digit mobile">
+          <div class="field-error" id="err_motherphone"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>Arrears <span id="arrearCountNote" class="arrear-count-note"></span></label>
+        <div class="arrear-list" id="arrearList"></div>
+        <datalist id="subjectDatalist"></datalist>
+        <button type="button" class="add-arrear-btn" id="addArrearBtn">+ Add arrear subject</button>
+        <div class="arrear-count-note">Type a subject code to reuse one from your Subjects list — the name fills in automatically.</div>
+        <div class="field-error" id="err_arrears"></div>
+      </div>
+      <div class="field">
+        <label>Address</label>
+        <div class="field-row">
+          <div class="field"><label style="font-weight:500;font-size:12px;">Door No</label><input type="text" id="f_addr_door"></div>
+          <div class="field"><label style="font-weight:500;font-size:12px;">Street Name</label><input type="text" id="f_addr_street"></div>
+        </div>
+        <label style="font-weight:500;font-size:12px;margin-top:4px;">Address Lines</label>
+        <div id="addressLinesList"></div>
+        <button type="button" class="add-arrear-btn" id="addAddressLineBtn">+ Add line</button>
+        <div class="field-row" style="margin-top:8px;">
+          <div class="field"><label style="font-weight:500;font-size:12px;">City</label><input type="text" id="f_addr_city"></div>
+          <div class="field"><label style="font-weight:500;font-size:12px;">District</label><input type="text" id="f_addr_district"></div>
+        </div>
+        <div class="field-row">
+          <div class="field"><label style="font-weight:500;font-size:12px;">State</label><input type="text" id="f_addr_state"></div>
+          <div class="field"><label style="font-weight:500;font-size:12px;">Country</label><input type="text" id="f_addr_country"></div>
+        </div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="formOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="saveBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Bulk Add Students (paste from Excel/Sheets) -->
+<div class="sheet-overlay" id="bulkAddOverlay">
+  <div class="sheet" style="max-width:640px;">
+    <div class="sheet-head">
+      <h2>📋 Bulk Add Students
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Copy a column range straight from Excel/Google Sheets (or paste comma-separated text) and paste it below — one student per line, in order: <b>S.No, Name, Register Number, Phone, Gender, Category</b>. Only Name is required; leave the rest blank if you don't have them yet.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="bulkAddOverlay">✕</button>
+    </div>
+    <div class="field-row" style="margin-bottom:8px;">
+      <div class="field">
+        <label>Add to Department</label>
+        <select id="bulkAddDept"></select>
+      </div>
+      <div class="field">
+        <label>Add to Year</label>
+        <select id="bulkAddYear"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Paste Student Data</label>
+      <textarea id="bulkAddText" rows="8" placeholder="1&#9;ABBAS M&#9;311825201001&#9;9876543210&#9;Male&#9;Day Scholar Boys
+2&#9;AKASH A&#9;311825201005&#9;9876543211&#9;Male&#9;College Hostel Boys
+3&#9;DIVYA S&#9;311825201009&#9;9876543212&#9;Female&#9;Private Hostel Girls" style="width:100%;font-family:inherit;font-size:13px;padding:10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);resize:vertical;"></textarea>
+    </div>
+    <div class="dash-quick-actions" style="margin:10px 0;">
+      <button type="button" class="btn btn-ghost" id="bulkAddPreviewBtn">👁️ Preview</button>
+    </div>
+    <div id="bulkAddPreviewWrap" style="display:none;">
+      <div class="small-note" style="font-size:12px;color:var(--text-dim);margin-bottom:6px;" id="bulkAddPreviewNote"></div>
+      <div style="overflow-x:auto;max-height:260px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;">
+        <table style="width:100%;border-collapse:collapse;font-size:12.5px;" id="bulkAddPreviewTable"></table>
+      </div>
+    </div>
+    <div class="field-error" id="bulkAddErr" style="margin-top:8px;"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" data-close="bulkAddOverlay">Cancel</button>
+      <button type="button" class="btn btn-primary" id="bulkAddConfirmBtn" disabled>➕ Add Students</button>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirm -->
+<div class="sheet-overlay" id="deleteOverlay">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Delete student?</h2><button class="icon-btn" data-close="deleteOverlay">✕</button></div>
+    <p style="font-size:14px;color:var(--text-dim);">This will permanently remove <b id="deleteName" style="color:var(--text);"></b> from this year's records. This can't be undone.</p>
+    <div class="confirm-box">⚠️ Deleting cannot be reversed.</div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-close="deleteOverlay">Cancel</button>
+      <button class="btn" id="confirmDeleteBtn" style="background:var(--danger);color:#fff;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add Department / Year -->
+<div class="sheet-overlay" id="addItemOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2 id="addItemTitle">Add</h2>
+      <button class="icon-btn" data-close="addItemOverlay">✕</button>
+    </div>
+    <form id="addItemForm">
+      <div class="field">
+        <label id="addItemLabel">Name</label>
+        <input type="text" id="addItemInput" autocomplete="off">
+        <div class="field-error" id="addItemError"></div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="addItemOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">Add</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Diary / Event Entry -->
+<div class="sheet-overlay" id="diaryOverlay">
+  <div class="sheet" style="max-width:460px;">
+    <div class="sheet-head">
+      <h2 id="diarySheetTitle">📔 New Diary Entry</h2>
+      <button class="icon-btn" data-close="diaryOverlay">✕</button>
+    </div>
+    <form id="diaryForm">
+      <input type="hidden" id="diary_id">
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Date *</label>
+          <input type="date" id="diary_date" required>
+        </div>
+        <div class="field">
+          <label>Time (optional)</label>
+          <input type="time" id="diary_time">
+        </div>
+      </div>
+      <div class="field">
+        <label>Title *</label>
+        <input type="text" id="diary_title" placeholder="e.g. Internal Assessment I, Staff Meeting..." required>
+        <div class="field-error" id="diary_err_title"></div>
+      </div>
+      <div class="field">
+        <label>Type</label>
+        <select id="diary_type">
+          <option value="event">📌 Event</option>
+          <option value="exam">📝 Exam / Assessment</option>
+          <option value="meeting">🧑‍💼 Meeting</option>
+          <option value="holiday">🏖️ Holiday</option>
+          <option value="reminder">⏰ Reminder</option>
+          <option value="note">🗒️ Diary Note</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Notes</label>
+        <textarea id="diary_notes" rows="3" placeholder="Optional details..."></textarea>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" id="diaryDeleteBtn" style="display:none;">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" data-close="diaryOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">💾 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Minutes of Meeting Entry -->
+<div class="sheet-overlay" id="momOverlay">
+  <div class="sheet" style="max-width:520px;">
+    <div class="sheet-head">
+      <h2 id="momSheetTitle">📝 New Minutes of Meeting</h2>
+      <button class="icon-btn" data-close="momOverlay">✕</button>
+    </div>
+    <form id="momForm">
+      <input type="hidden" id="mom_id">
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Date *</label>
+          <input type="date" id="mom_date" required>
+        </div>
+        <div class="field">
+          <label>Time *</label>
+          <input type="time" id="mom_time" required>
+        </div>
+      </div>
+      <div class="field">
+        <label>Meeting Title / Subject *</label>
+        <input type="text" id="mom_title" placeholder="e.g. Department Staff Meeting, Curriculum Review..." required>
+        <div class="field-error" id="mom_err_title"></div>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Venue</label>
+          <input type="text" id="mom_venue" placeholder="Optional">
+        </div>
+        <div class="field">
+          <label>Chaired By</label>
+          <input type="text" id="mom_chair" placeholder="Optional">
+        </div>
+      </div>
+      <div class="field">
+        <label>Attendees</label>
+        <input type="text" id="mom_attendees" placeholder="Names, comma-separated (optional)">
+      </div>
+      <div class="field">
+        <label>Agenda</label>
+        <textarea id="mom_agenda" rows="2" placeholder="Optional — points to be discussed"></textarea>
+      </div>
+      <div class="field">
+        <label>Minutes / Discussion *</label>
+        <textarea id="mom_minutes" rows="4" placeholder="What was discussed / decided" required></textarea>
+        <div class="field-error" id="mom_err_minutes"></div>
+      </div>
+      <div class="field">
+        <label>Action Items</label>
+        <textarea id="mom_actions" rows="2" placeholder="Optional — who does what, by when"></textarea>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" id="momDeleteBtn" style="display:none;">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" data-close="momOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">💾 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- HOD Login gate — shown before an HOD-only action (e.g. moving a subject
+     between semesters) -->
+<div class="sheet-overlay" id="hodLoginOverlay" style="z-index:160;">
+  <div class="sheet" style="max-width:380px;">
+    <div class="sheet-head">
+      <h2>🔒 HOD Login Required</h2>
+      <button class="icon-btn" data-close="hodLoginOverlay">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-dim);margin-top:0;" id="hodLoginMsg">This action is restricted to the HOD. Enter the HOD PIN/Password to continue.</p>
+    <form id="hodLoginForm">
+      <div class="field">
+        <label>HOD PIN / Password</label>
+        <input type="password" id="hodLoginInput" autocomplete="off">
+        <div class="field-error" id="hodLoginErr"></div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="hodLoginOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">Unlock</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Move Subject to another Semester (HOD-gated) -->
+<div class="sheet-overlay" id="moveSubjectOverlay" style="z-index:160;">
+  <div class="sheet" style="max-width:380px;">
+    <div class="sheet-head">
+      <h2>↔ Move Subject</h2>
+      <button class="icon-btn" data-close="moveSubjectOverlay">✕</button>
+    </div>
+    <p style="font-size:13px;color:var(--text-dim);margin-top:0;" id="moveSubjectMsg"></p>
+    <div class="field">
+      <label>Move to Semester</label>
+      <select id="moveSubjectTargetSem"></select>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" data-close="moveSubjectOverlay">Cancel</button>
+      <button type="button" class="btn btn-primary" id="moveSubjectConfirmBtn">Move</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Mark Components (CIA-I, Assignment, etc.) -->
+<div class="sheet-overlay" id="marksComponentsOverlay">
+  <div class="sheet" style="max-width:480px;">
+    <div class="sheet-head">
+      <h2>⚙️ Mark Components
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Rename any component, change its maximum marks, remove one, or add a new one — applies to every subject's Marks table.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="marksComponentsOverlay">✕</button>
+    </div>
+    <div id="marksComponentsList" style="margin-bottom:14px;"></div>
+    <div class="field-row" style="display:grid;grid-template-columns:1.6fr 1fr auto;gap:8px;align-items:end;">
+      <div class="field" style="margin-bottom:0;">
+        <label style="font-size:11px;">New Component Name</label>
+        <input type="text" id="mc_newLabel" placeholder="e.g. Quiz, Seminar...">
+      </div>
+      <div class="field" style="margin-bottom:0;">
+        <label style="font-size:11px;">Max Marks</label>
+        <input type="number" id="mc_newMax" min="1" step="0.5" value="10">
+      </div>
+      <button type="button" class="btn btn-primary" id="mc_addBtn">➕ Add</button>
+    </div>
+    <div class="field-error" id="mc_err" style="margin-top:6px;"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-primary" data-close="marksComponentsOverlay">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Combined Class Group -->
+<div class="sheet-overlay" id="combinedGroupOverlay">
+  <div class="sheet" style="max-width:460px;">
+    <div class="sheet-head">
+      <h2 id="combinedGroupSheetTitle">🔗 New Combined Class</h2>
+      <button class="icon-btn" data-close="combinedGroupOverlay">✕</button>
+    </div>
+    <form id="combinedGroupForm">
+      <input type="hidden" id="cg_id">
+      <div class="field">
+        <label>Group Name *</label>
+        <input type="text" id="cg_name" placeholder="e.g. AI & DS + CSBS — II Year" required>
+        <div class="field-error" id="cg_err_name"></div>
+      </div>
+      <div class="field">
+        <label>Departments &amp; Years to combine (pick 2 or more) *</label>
+        <div id="cg_membersGroup" style="display:flex;flex-direction:column;gap:6px;max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:10px;padding:10px;"></div>
+        <div class="field-error" id="cg_err_members"></div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" id="combinedGroupDeleteBtn" style="display:none;">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" data-close="combinedGroupOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">💾 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Combined Class picker (when starting attendance) -->
+<div class="sheet-overlay" id="combinedPickOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2>🔗 Combined Attendance — Choose Class</h2>
+      <button class="icon-btn" data-close="combinedPickOverlay">✕</button>
+    </div>
+    <div id="combinedPickList"></div>
+  </div>
+</div>
+
+<!-- Class Totals (bulk) attendance entry -->
+<div class="sheet-overlay" id="classTotalsOverlay">
+  <div class="sheet" style="max-width:480px;">
+    <div class="sheet-head">
+      <h2>🔢 Log Class Totals
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Log Present, On-Duty and Absent counts for the whole class at once — no need to mark each student. These totals feed the dashboard, donuts and HOD reports exactly like individual marking (just without per-student names).</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="classTotalsOverlay">✕</button>
+    </div>
+    <div class="field" style="margin-bottom:12px;">
+      <label>📋 Paste attendance notes <span style="font-weight:400;color:var(--text-dim);">(auto-fills the fields below)</span></label>
+      <textarea id="ctPasteText" rows="5" placeholder="Date: 28/09/26&#10;AI & DS - 2nd Year&#10;Present: 49&#10;Absent: 05&#10;OD: 03&#10;Total: 57"></textarea>
+      <button type="button" class="btn btn-ghost" id="ctPasteFillBtn" style="width:100%;justify-content:center;margin-top:8px;">✨ Fill fields from pasted text</button>
+      <div id="ctPasteNote" class="arrear-count-note" style="display:none;"></div>
+      <!-- Shown instead of (not alongside) the single form below when the
+           paste has more than one year's block in it, e.g. IV/III/II Year
+           all in one note — saves all of them in one tap rather than
+           re-pasting/re-filling three separate times. -->
+      <div id="ctMultiYearWrap" style="display:none;margin-top:10px;">
+        <div class="arrear-count-note" style="margin-bottom:8px;">Found <span id="ctMultiYearCount"></span> years in this note — Period still applies to all of them, pick it below before saving.</div>
+        <div id="ctMultiYearList" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+        <button type="button" class="btn btn-primary" id="ctMultiYearSaveBtn" style="width:100%;justify-content:center;">💾 Save All Years</button>
+      </div>
+    </div>
+    <form id="classTotalsForm">
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Department</label>
+          <select id="ct_dept"></select>
+        </div>
+        <div class="field">
+          <label>Year</label>
+          <select id="ct_year"></select>
+        </div>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Date</label>
+          <input type="date" id="ct_date">
+        </div>
+        <div class="field">
+          <label>Period</label>
+          <select id="ct_period"><option value="__whole__">Whole Day (apply to every period)</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Also apply the same numbers to these periods (optional)</label>
+        <div id="ct_alsoPeriods" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+      </div>
+      <button type="button" class="btn btn-ghost" id="ctUsePreviousBtn" style="width:100%;justify-content:center;margin-bottom:10px;">↺ Use Previous Attendance</button>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Total Students <span id="ct_totalHint" style="font-weight:400;color:var(--text-dim);"></span></label>
+          <input type="number" id="ct_total" min="0">
+        </div>
+        <div class="field">
+          <label>Present</label>
+          <input type="number" id="ct_present" min="0">
+        </div>
+        <div class="field">
+          <label>On-Duty (OD)</label>
+          <input type="number" id="ct_od" min="0">
+        </div>
+      </div>
+      <div class="field">
+        <label>Absent (worked out automatically)</label>
+        <input type="number" id="ct_absent" readonly style="background:var(--surface-2);">
+      </div>
+      <div class="field-error" id="ct_err"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" id="classTotalsClearBtn">Clear</button>
+        <button type="button" class="btn btn-ghost" id="ctDeleteSavedBtn" style="color:var(--danger);">🗑️ Clear Saved</button>
+        <button type="button" class="btn btn-ghost" data-close="classTotalsOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">💾 Save Attendance</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- OD Report — per-student OD spells + attendance totals over a date range -->
+<div class="sheet-overlay" id="odReportOverlay">
+  <div class="sheet" style="max-width:640px;">
+    <div class="sheet-head">
+      <h2>🧾 Students on OD
+        <details class="info-tip">
+          <summary title="What is this?">i</summary>
+          <div class="info-tip-body">Every student who was on OD at least once in the date range, with the OD type, the From–To span of each OD spell, and their overall Present/Absent/OD day totals for the range. Only days with individual, per-student marking count here — a day logged only as 🔢 Class Totals has no per-student breakdown to draw from.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="odReportOverlay">✕</button>
+    </div>
+    <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field">
+        <label>Department</label>
+        <select id="odr_dept"></select>
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <select id="odr_year"></select>
+      </div>
+    </div>
+    <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+      <div class="field">
+        <label>From</label>
+        <input type="date" id="odr_from">
+      </div>
+      <div class="field">
+        <label>To</label>
+        <input type="date" id="odr_to">
+      </div>
+    </div>
+    <div class="field">
+      <label>OD Type <span style="font-weight:400;color:var(--text-dim);">(optional filter)</span></label>
+      <select id="odr_type"><option value="">All types</option></select>
+    </div>
+    <button type="button" class="btn btn-primary" id="odr_runBtn" style="width:100%;justify-content:center;margin:6px 0 14px;">🔍 Generate</button>
+    <div id="odReportResults"></div>
+  </div>
+</div>
+
+<!-- Task Checklist Entry -->
+<div class="sheet-overlay" id="taskOverlay">
+  <div class="sheet" style="max-width:460px;">
+    <div class="sheet-head">
+      <h2 id="taskSheetTitle">✅ New Task</h2>
+      <button class="icon-btn" data-close="taskOverlay">✕</button>
+    </div>
+    <form id="taskForm">
+      <input type="hidden" id="task_id">
+      <div class="field">
+        <label>Task Title *</label>
+        <input type="text" id="task_title" placeholder="e.g. Submit internal marks to COE" required>
+        <div class="field-error" id="task_err_title"></div>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="field">
+          <label>Status</label>
+          <select id="task_status">
+            <option value="not_started">⬜ Not Started</option>
+            <option value="in_progress">🟡 In Progress</option>
+            <option value="completed">✅ Completed</option>
+          </select>
+        </div>
+        <div class="field">
+          <label>Deadline</label>
+          <input type="date" id="task_deadline">
+        </div>
+      </div>
+      <div class="field-row" style="display:grid;grid-template-columns:1fr 1.4fr;gap:12px;">
+        <div class="field">
+          <label>Assign To</label>
+          <select id="task_assigneeType">
+            <option value="none">Department-wide</option>
+            <option value="student">🎓 Individual Student</option>
+            <option value="faculty">🧑‍🏫 Individual Faculty</option>
+          </select>
+        </div>
+        <div class="field" id="task_assigneeNameField" style="display:none;">
+          <label>Name</label>
+          <select id="task_assigneeName"></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>Remarks</label>
+        <textarea id="task_remarks" rows="3" placeholder="Optional notes / progress remarks..."></textarea>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" id="taskDeleteBtn" style="display:none;">🗑️ Delete</button>
+        <button type="button" class="btn btn-ghost" data-close="taskOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">💾 Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Student Attendance -->
+<div class="sheet-overlay" id="attendanceOverlay">
+  <div class="sheet" style="max-width:720px;">
+    <div class="sheet-head">
+      <h2>🗓️ Attendance — <span id="attClassLabel"></span></h2>
+      <button class="icon-btn" data-close="attendanceOverlay">✕</button>
+    </div>
+    <div class="att-toolbar">
+      <input type="date" id="attDate">
+      <div class="tabs" id="attPeriodTabs" style="margin:0;"></div>
+      <button type="button" class="btn btn-ghost" id="attReuseBtn">↻ Reuse previous</button>
+      <button type="button" class="btn btn-ghost" id="attDeleteBtn" style="color:var(--danger);">🗑️ Delete this period</button>
+    </div>
+    <div class="att-toolbar">
+      <button type="button" class="btn btn-ghost" id="attMarkAllPresentBtn" style="color:var(--good);">✅ Mark All Present</button>
+      <button type="button" class="btn btn-ghost" id="attMarkAllAbsentBtn" style="color:var(--danger);">❌ Mark All Absent</button>
+    </div>
+    <div class="att-summary" id="attSummary"></div>
+    <div id="attBulkNotice"></div>
+    <div id="attRows"></div>
+    <div class="att-actions-row">
+      <button type="button" class="btn btn-ghost" id="attShareBtn">📤 Share Summary</button>
+      <button type="button" class="btn btn-primary" id="attSaveBtn">💾 Save Attendance</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Attendance Count (HOD) — just the totals, no per-student marking,
+     for when the HOD just needs to log/share a headcount fast rather than
+     tick every student. Nothing here touches the per-student ATT records
+     used everywhere else (Attendance sheet above, reports, donuts) — this
+     is a standalone quick share, on purpose, to keep it very simple. -->
+<div class="sheet-overlay" id="quickCountOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2>🔢 Quick Attendance Count
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Just the totals — type the counts and share. Nothing to tick per student.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="quickCountOverlay">✕</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Department</label>
+        <select id="qcDept"></select>
+      </div>
+      <div class="field" id="qcYearField">
+        <label>Year</label>
+        <select id="qcYear"></select>
+      </div>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Period</label>
+        <select id="qcPeriod"></select>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="qcDate">
+      </div>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;margin:2px 0 12px;cursor:pointer;">
+      <input type="checkbox" id="qcAllYearsToggle" style="width:auto;"> 📋 Enter all years at once (same Department/Period/Date)
+    </label>
+    <div id="qcSingleYearFields">
+      <div class="field-row">
+        <div class="field">
+          <label>Total Students <span style="font-weight:400;color:var(--text-dim);">(auto from roster)</span></label>
+          <input type="number" id="qcTotal" min="0" inputmode="numeric" placeholder="0" autocomplete="off" name="qc_total_no_autofill">
+        </div>
+        <div class="field">
+          <label>Present</label>
+          <input type="number" id="qcPresent" min="0" inputmode="numeric" placeholder="0" autocomplete="off" name="qc_present_no_autofill">
+        </div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Absent</label>
+          <input type="number" id="qcAbsent" min="0" inputmode="numeric" placeholder="0" autocomplete="off" name="qc_absent_no_autofill">
+        </div>
+        <div class="field">
+          <label>OD</label>
+          <input type="number" id="qcOd" min="0" inputmode="numeric" placeholder="0" autocomplete="off" name="qc_od_no_autofill">
+        </div>
+      </div>
+      <div id="qcCheckNote" class="arrear-count-note"></div>
+      <div id="qcSavedNote" class="arrear-count-note" style="display:none;"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="quickCountOverlay">Cancel</button>
+        <button type="button" class="btn btn-ghost" id="qcSaveBtn">💾 Save</button>
+        <button type="button" class="btn btn-primary" id="qcShareBtn">📤 Share</button>
+      </div>
+    </div>
+    <!-- Shown instead of the single-year fields above when "Enter all years
+         at once" is ticked — one Total/Present/OD row per year in the
+         selected department, all sharing the same Period/Date, saved
+         together with one tap instead of re-picking Year each time. -->
+    <div id="qcAllYearsWrap" style="display:none;">
+      <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+        <button type="button" class="link-btn" id="qcAllYearsAllBtn">All / None</button>
+      </div>
+      <div id="qcAllYearsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="quickCountOverlay">Cancel</button>
+        <button type="button" class="btn btn-primary" id="qcAllYearsSaveBtn" style="width:100%;justify-content:center;">💾 Save All Years</button>
+      </div>
+    </div>
+    <div style="border-top:1px solid var(--border);margin:16px 0 10px;padding-top:10px;">
+      <button type="button" class="link-btn" id="qcMultiToggleBtn">🗂️ Share several classes/periods together for this date ▾</button>
+      <div id="qcMultiWrap" style="display:none;margin-top:10px;">
+        <div class="arrear-count-note" style="margin-bottom:8px;">Pick which saved counts (for <span id="qcMultiDateLabel"></span>) go into one combined share message.</div>
+        <div style="display:flex;justify-content:flex-end;margin-bottom:6px;">
+          <button type="button" class="link-btn" id="qcMultiAllBtn">All / None</button>
+        </div>
+        <div id="qcMultiList" style="display:flex;flex-direction:column;gap:8px;max-height:260px;overflow-y:auto;"></div>
+        <label style="display:flex;align-items:center;gap:6px;font-size:12.5px;font-weight:600;margin:10px 0 0;cursor:pointer;">
+          <input type="checkbox" id="qcMultiIncludeCombinedChk" style="width:auto;">
+          Include a "Combined" total line in the share message
+        </label>
+        <div class="sheet-actions" style="margin-top:10px;">
+          <button type="button" class="btn btn-primary" id="qcMultiShareBtn">📤 Share Selected</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Faculty Attendance -->
+<div class="sheet-overlay" id="facAttendanceOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>🗓️ Faculty Attendance — <span id="facAttDeptLabel"></span></h2>
+      <button class="icon-btn" data-close="facAttendanceOverlay">✕</button>
+    </div>
+    <div class="att-toolbar">
+      <input type="date" id="facAttDate">
+      <button type="button" class="btn btn-ghost" id="facAttReuseBtn">↻ Reuse previous day</button>
+      <button type="button" class="btn btn-ghost" id="facAttDeleteBtn" style="color:var(--danger);">🗑️ Delete this day</button>
+    </div>
+    <div class="att-toolbar">
+      <button type="button" class="btn btn-ghost" id="facAttMarkAllPresentBtn" style="color:var(--good);">✅ Mark All Present</button>
+      <button type="button" class="btn btn-ghost" id="facAttMarkAllAbsentBtn" style="color:var(--danger);">❌ Mark All Absent</button>
+    </div>
+    <div class="att-summary" id="facAttSummary"></div>
+    <div id="facAttRows"></div>
+    <div class="att-actions-row">
+      <button type="button" class="btn btn-ghost" id="facAttShareBtn">📤 Share Summary</button>
+      <button type="button" class="btn btn-primary" id="facAttSaveBtn">💾 Save Attendance</button>
+    </div>
+  </div>
+</div>
+
+<!-- Share preview / copy fallback -->
+<div class="sheet-overlay" id="shareOverlay">
+  <div class="sheet" style="max-width:480px;">
+    <div class="sheet-head">
+      <h2>📤 Share Summary</h2>
+      <button class="icon-btn" data-close="shareOverlay">✕</button>
+    </div>
+    <div class="field" id="shareYearsWrap" style="display:none;margin-bottom:10px;">
+      <label>Years to include <button type="button" class="link-btn" id="shareYearsAllBtn" style="float:right;">All / None</button></label>
+      <div id="shareYearsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:8px 10px;border:1px solid var(--border);border-radius:10px;"></div>
+      <div class="arrear-count-note">Only the ticked year(s) go into the message below — untick a year and the text updates right away.</div>
+    </div>
+    <textarea id="shareText" readonly style="width:100%;min-height:220px;padding:12px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13px;font-family:inherit;white-space:pre-wrap;"></textarea>
+    <div class="share-btn-row">
+      <button type="button" class="btn btn-ghost btn-share-wa" id="shareWhatsappBtn">🟢 WhatsApp</button>
+      <button type="button" class="btn btn-ghost btn-share-tg" id="shareTelegramBtn">✈️ Telegram</button>
+      <button type="button" class="btn btn-ghost btn-share-sms" id="shareSMSBtn">💬 SMS</button>
+      <button type="button" class="btn btn-ghost" id="shareCopyBtn">📋 Copy Text</button>
+      <button type="button" class="btn btn-ghost" id="sharePrintBtn">🖨️ Print / PDF</button>
+    </div>
+    <div class="sheet-actions" id="shareNativeRow" style="display:none;">
+      <button type="button" class="btn btn-primary" id="shareNativeBtn">📤 More share options…</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Faculty -->
+<div class="sheet-overlay" id="facFormOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="facFormTitle">Add Faculty</h2>
+      <button class="icon-btn" data-close="facFormOverlay">✕</button>
+    </div>
+    <form id="facultyForm" novalidate>
+      <div class="field">
+        <label>Full Name *</label>
+        <input type="text" id="ff_name" required>
+        <div class="field-error" id="ferr_name"></div>
+      </div>
+      <div class="field">
+        <label>Designation</label>
+        <input type="text" id="ff_designation" placeholder="e.g. Assistant Professor">
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Phone</label>
+          <input type="text" id="ff_phone" inputmode="numeric" placeholder="10-digit mobile">
+          <div class="field-error" id="ferr_phone"></div>
+        </div>
+        <div class="field">
+          <label>Email</label>
+          <input type="text" id="ff_email">
+          <div class="field-error" id="ferr_email"></div>
+        </div>
+      </div>
+      <div class="field">
+        <label>
+          Subjects Handled
+          <button type="button" class="link-btn" id="ffAddSubjectRowBtn" style="float:right;">➕ Add Subject</button>
+        </label>
+        <div class="arrear-count-note">A faculty member can handle subjects across any department and year — not just this one.</div>
+        <div id="ffSubjectsRows"></div>
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="facFormOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="facSaveBtn">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Faculty Detail -->
+<div class="sheet-overlay" id="facDetailOverlay">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2 id="facDetailName">Faculty</h2>
+      <button class="icon-btn" data-close="facDetailOverlay">✕</button>
+    </div>
+    <div id="facDetailBody"></div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" id="facDetailTimetableBtn">🗓️ Timetable</button>
+      <button class="btn btn-ghost" id="facDetailEditBtn">✏️ Edit</button>
+      <button class="btn btn-ghost" id="facDetailDeleteBtn" style="color:var(--danger);">🗑️ Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- Faculty Delete Confirm -->
+<div class="sheet-overlay" id="facDeleteOverlay">
+  <div class="sheet">
+    <div class="sheet-head"><h2>Delete faculty?</h2><button class="icon-btn" data-close="facDeleteOverlay">✕</button></div>
+    <p style="font-size:14px;color:var(--text-dim);">This will permanently remove <b id="facDeleteName" style="color:var(--text);"></b>. This can't be undone.</p>
+    <div class="confirm-box">⚠️ Deleting cannot be reversed.</div>
+    <div class="sheet-actions">
+      <button class="btn btn-ghost" data-close="facDeleteOverlay">Cancel</button>
+      <button class="btn" id="facConfirmDeleteBtn" style="background:var(--danger);color:#fff;">Delete</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOD Scope (include/exclude) -->
+<div class="sheet-overlay" id="hodScopeOverlay">
+  <div class="sheet" style="max-width:480px;">
+    <div class="sheet-head">
+      <h2>⚙️ Include / Exclude
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Choose which departments and years count toward HOD totals.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="hodScopeOverlay">✕</button>
+    </div>
+    <div id="hodScopeBody"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-primary" id="hodScopeDoneBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Timetable Slot -->
+<div class="sheet-overlay" id="ttSlotOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2 id="ttSlotTitle">Edit Period</h2>
+      <button class="icon-btn" data-close="ttSlotOverlay">✕</button>
+    </div>
+    <form id="ttSlotForm">
+      <div class="field-row">
+        <div class="field">
+          <label>Subject</label>
+          <input type="text" id="tts_subject" list="ttSubjectDatalist" autocomplete="off" placeholder="Name or code">
+          <datalist id="ttSubjectDatalist"></datalist>
+        </div>
+        <div class="field">
+          <label>Code</label>
+          <input type="text" id="tts_code" placeholder="Auto-filled">
+        </div>
+      </div>
+      <div class="field">
+        <label>Faculty</label>
+        <input type="text" id="tts_faculty" list="ttFacultyDatalist" autocomplete="off">
+        <datalist id="ttFacultyDatalist"></datalist>
+      </div>
+      <div class="field"><label>Venue</label><input type="text" id="tts_venue" placeholder="e.g. Lab 3 / Room 204"></div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" id="ttSlotClearBtn">🗑️ Clear</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Period Timings -->
+<div class="sheet-overlay" id="ttTimingsOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2>⏱️ Timings
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Set period start times, Short Break and Lunch, then choose what this applies to — any combination of years and/or specific weekdays (e.g. a Friday-only Jumma lunch).</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="ttTimingsOverlay">✕</button>
+    </div>
+    <div class="field">
+      <label>Number of Periods</label>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <input type="number" id="ttNumPeriods" min="1" max="16" step="1" style="max-width:90px;">
+        <button type="button" class="btn btn-ghost" id="ttNumPeriodsApplyBtn">Apply</button>
+      </div>
+      <div class="arrear-count-note">Increase or reduce how many periods a day has — applies everywhere at once (timetable, attendance, alarm). Existing period assignments are kept; new periods start with default times you can edit below.</div>
+    </div>
+    <div class="field">
+      <label>This timing is applicable to</label>
+      <div id="ttTimingsApplyTo" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;"></div>
+      <div class="arrear-count-note">Tick "General" for the college-wide default, specific years for their own bell schedule, and/or specific weekdays (a weekday tick wins over a year's own timing on that day — handy for a Friday-only lunch). Leaving something unticked keeps whatever it currently uses.</div>
+    </div>
+    <div id="ttTimingsFields">
+      <div class="arrear-count-note" style="margin-bottom:4px;">Each period: Start time, Duration (minutes) and End time — edit any one and the others adjust. Times also show as 12-hour (AM/PM) underneath.</div>
+      <div id="ttTimingsRows"></div>
+      <div class="field-row">
+        <div class="field"><label>Short Break start</label><input type="time" id="ttShortBreakStart"></div>
+        <div class="field"><label>Short Break end</label><input type="time" id="ttShortBreakEnd"></div>
+        <div class="field"><label>Lunch start</label><input type="time" id="ttLunchStart"></div>
+        <div class="field"><label>Lunch end</label><input type="time" id="ttLunchEnd"></div>
+      </div>
+      <div class="field">
+        <label>Period order for this schedule</label>
+        <input type="text" id="ttPeriodOrder" placeholder="e.g. 1,2,3,4,5,6,8,7">
+        <div class="arrear-count-note">Comma-separated period numbers in the order they run. Change this to move a period across the lunch break — e.g. swap the last two to make the usual post-lunch period run before lunch instead. Each period keeps its own subject/faculty wherever it lands. Leave as 1,2,3...8 for the normal order.</div>
+      </div>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" id="ttTimingsResetBtn">↺ Reset ticked to General</button>
+      <button type="button" class="btn btn-primary" id="ttTimingsSaveBtn">Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Copy Timetable -->
+<div class="sheet-overlay" id="ttCopyOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2>📋 Copy Timetable From…
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Replaces this class's whole weekly timetable with a copy of the one you pick.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="ttCopyOverlay">✕</button>
+    </div>
+    <div class="field">
+      <label>Department</label>
+      <select id="ttCopyDept"></select>
+    </div>
+    <div class="field">
+      <label>Year</label>
+      <select id="ttCopyYear"></select>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" data-close="ttCopyOverlay">Cancel</button>
+      <button type="button" class="btn btn-primary" id="ttCopyConfirmBtn">Copy Timetable</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timetable Generator -->
+<div class="sheet-overlay" id="ttGenOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>🧮 Auto-Generate Timetable
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Fills the week's timetable from the semester's subject list — weekly periods come from each subject's L-T-P / Weekly Periods (set in Subjects), and faculty is auto-picked from what's already on file. Lab-type subjects are placed as one contiguous block per session; clashing faculty across other classes are skipped automatically.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="ttGenOverlay">✕</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Department</label>
+        <select id="genDept"></select>
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <select id="genYear"></select>
+      </div>
+    </div>
+    <div class="field">
+      <label>Semester (subject list to pull from)</label>
+      <select id="genSem"></select>
+    </div>
+    <div class="field">
+      <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+        <input type="checkbox" id="genOverwrite" style="width:auto;"> Overwrite slots that already have a subject (unchecked = fill empty slots only)
+      </label>
+    </div>
+    <div class="field">
+      <label>Subjects &amp; Faculty for this run</label>
+      <div id="genSubjectRows" style="border:1px solid var(--border);border-radius:10px;padding:8px 10px;max-height:260px;overflow-y:auto;"></div>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" data-close="ttGenOverlay">Cancel</button>
+      <button type="button" class="btn btn-primary" id="ttGenRunBtn">Generate</button>
+    </div>
+    <div id="ttGenResult" style="margin-top:10px;font-size:13px;"></div>
+
+    <div class="field" style="border-top:1px solid var(--border);margin-top:16px;padding-top:14px;">
+      <label style="font-weight:700;">⚡ Batch Generate — every department &amp; year at once</label>
+      <div style="font-size:12.5px;color:var(--text-dim);margin:2px 0 10px;">Collects each subject's already-recorded faculty (from Subjects / last-used, per department and year) and fills every matching class's timetable in one go. Faculty clashes are checked across all departments and years — including ones this same batch run just filled — so no one is double-booked.</div>
+      <div class="field-row">
+        <div class="field">
+          <label>Semesters to generate</label>
+          <select id="genBatchScope">
+            <option value="odd">Odd semesters (1, 3, 5, 7)</option>
+            <option value="even">Even semesters (2, 4, 6, 8)</option>
+            <option value="all">All semesters (1–8)</option>
+            <option value="sem1">Semester 1 only — all departments</option>
+          </select>
+        </div>
+        <div class="field">
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer;margin-top:26px;">
+            <input type="checkbox" id="genBatchSkipSem1" checked style="width:auto;"> Skip Semester 1 (usually starts later)
+          </label>
+        </div>
+      </div>
+      <div class="field">
+        <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+          <input type="checkbox" id="genBatchOverwrite" style="width:auto;"> Overwrite slots that already have a subject
+        </label>
+      </div>
+      <div class="sheet-actions" style="margin-top:2px;">
+        <button type="button" class="btn btn-primary" id="ttBatchRunBtn">⚡ Generate for all Depts/Years</button>
+      </div>
+      <div id="ttBatchResult" style="margin-top:10px;font-size:13px;max-height:240px;overflow-y:auto;"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Master Timetable -->
+<div class="sheet-overlay" id="masterTtOverlay">
+  <div class="sheet" style="max-width:900px;">
+    <div class="sheet-head">
+      <h2>📋 Master Timetable — <span id="masterTtLabel"></span></h2>
+      <button class="icon-btn" data-close="masterTtOverlay">✕</button>
+    </div>
+    <div class="field-row">
+      <div class="field">
+        <label>Department</label>
+        <select id="masterTtDept"></select>
+      </div>
+      <div class="field">
+        <label>Year</label>
+        <select id="masterTtYear"></select>
+      </div>
+    </div>
+    <div style="overflow-x:auto;">
+      <table id="masterTtTable" style="border-collapse:collapse;width:100%;font-size:11.5px;"></table>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" id="masterTtShareBtn">📤 Share</button>
+    </div>
+  </div>
+</div>
+
+<!-- Individual Faculty Timetable -->
+<div class="sheet-overlay" id="facTtOverlay">
+  <div class="sheet" style="max-width:900px;">
+    <div class="sheet-head">
+      <h2>👤 Faculty Timetable</h2>
+      <button class="icon-btn" data-close="facTtOverlay">✕</button>
+    </div>
+    <div class="field" style="min-width:0;">
+      <label>Departments <span style="font-weight:400;color:var(--text-dim);">— tick any combination to narrow the Faculty list below</span> <button type="button" class="link-btn" id="facTtDeptsAllBtn" style="float:right;">All / None</button></label>
+      <div id="facTtDeptsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px 12px;border:1px solid var(--border);border-radius:10px;margin-bottom:4px;"></div>
+      <button type="button" class="link-btn" id="facTtAddDeptBtn" style="margin-bottom:8px;">+ Add New Department</button>
+    </div>
+    <div class="field">
+      <label>Faculty</label>
+      <select id="facTtSelect"></select>
+    </div>
+    <label style="display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:600;cursor:pointer;margin-bottom:8px;">
+      <input type="checkbox" id="facTtEditModeToggle" style="width:auto;">
+      ✏️ Edit Mode — tap a period to move/reassign the class instead of logging today's record
+    </label>
+    <p id="facTtHint" style="font-size:12px;color:var(--text-dim);margin:0 0 8px;">Tap any period to enter today's topic covered and attendance counts for that class. Press and hold a scheduled period to remove it.</p>
+    <div style="overflow-x:auto;">
+      <table id="facTtTable" style="border-collapse:collapse;width:100%;font-size:11.5px;"></table>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" id="facTtShareBtn">📤 Share</button>
+    </div>
+  </div>
+</div>
+
+<!-- Faculty Daily Class Record (topic covered + attendance counts for one period) -->
+<div class="sheet-overlay" id="facClassRecordOverlay">
+  <div class="sheet" style="max-width:460px;">
+    <div class="sheet-head">
+      <h2 id="fcrTitle">📘 Class Record</h2>
+      <button class="icon-btn" data-close="facClassRecordOverlay">✕</button>
+    </div>
+    <div id="fcrMeta" style="font-size:13px;color:var(--text-dim);margin-bottom:12px;"></div>
+    <div class="field">
+      <label>Date</label>
+      <input type="date" id="fcr_date">
+    </div>
+    <div class="field">
+      <label>Topic Covered</label>
+      <textarea id="fcr_topic" rows="2" placeholder="What was taught in this period..."></textarea>
+    </div>
+    <div id="fcrAttendanceBlock"></div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-ghost" data-close="facClassRecordOverlay">Cancel</button>
+      <button type="button" class="btn btn-ghost" id="fcrClearBtn">🧹 Clear</button>
+      <button type="button" class="btn" id="fcrDeleteBtn" style="background:var(--danger);color:#fff;display:none;">🗑️ Delete</button>
+      <button type="button" class="btn btn-primary" id="fcrSaveBtn">💾 Save</button>
+    </div>
+  </div>
+</div>
+
+<!-- Subjects Manager -->
+<div class="sheet-overlay" id="subjectsOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>📚 Subjects — <span id="subjectsDeptLabel"></span></h2>
+      <button class="icon-btn" data-close="subjectsOverlay">✕</button>
+    </div>
+    <div class="dash-quick-actions" style="margin-bottom:10px;">
+      <button type="button" class="btn btn-ghost" id="programOutcomesBtn">🎯 Dept PEO / PO / PSO</button>
+      <button type="button" class="btn btn-ghost" id="importSyllabusBtn">📥 Import AI &amp; DS Syllabus (2025 Curriculum)</button>
+    </div>
+    <div class="tabs" id="semesterTabs" style="margin:0 0 12px;"></div>
+    <div id="subjectRows"></div>
+    <button type="button" class="add-arrear-btn" id="addSubjectBtn">+ Add subject to this semester</button>
+  </div>
+</div>
+
+<!-- Dept PEO / PO / PSO -->
+<div class="sheet-overlay" id="programOutcomesOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>🎯 PEO / PO / PSO — <span id="poDeptLabel"></span>
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Program-wide, shared by every subject in this department when mapping Course Outcomes.</div>
+        </details>
+      </h2>
+      <button class="icon-btn" data-close="programOutcomesOverlay">✕</button>
+    </div>
+    <div class="field">
+      <label>Program Educational Objectives (PEO) <button type="button" class="link-btn" id="addPeoBtn" style="float:right;">+ Add PEO</button></label>
+      <div id="peoRows"></div>
+    </div>
+    <div class="field">
+      <label>Program Outcomes (PO) <button type="button" class="link-btn" id="addPoBtn" style="float:right;">+ Add PO</button></label>
+      <div id="poRows"></div>
+    </div>
+    <div class="field">
+      <label>Program Specific Outcomes (PSO) <button type="button" class="link-btn" id="addPsoBtn" style="float:right;">+ Add PSO</button></label>
+      <div id="psoRows"></div>
+    </div>
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-primary" id="programOutcomesDoneBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Subject Syllabus & Outcomes -->
+<div class="sheet-overlay" id="subjectOutcomesOverlay">
+  <div class="sheet" style="max-width:760px;">
+    <div class="sheet-head">
+      <h2>📘 <span id="soTitle"></span></h2>
+      <button class="icon-btn" data-close="subjectOutcomesOverlay">✕</button>
+    </div>
+    <div class="tabs" style="margin-bottom:12px;">
+      <button type="button" class="tab active" id="soTabSyllabus">Syllabus</button>
+      <button type="button" class="tab" id="soTabCOs">Course Outcomes</button>
+      <button type="button" class="tab" id="soTabAttainment">CO–PO/PSO Attainment</button>
+    </div>
+
+    <div id="soPaneSyllabus">
+      <div id="syllabusCoverageBar" style="margin-bottom:12px;"></div>
+      <div class="field">
+        <label>Topics — Lesson Plan &amp; Daily Class Record <button type="button" class="link-btn" id="addSyllabusTopicBtn" style="float:right;">+ Add topic</button></label>
+        <div id="syllabusRows"></div>
+        <div class="arrear-count-note">One row per topic/unit: hours, pedagogy, a planned date (lesson plan) and a "Mark Covered" toggle you tick off period by period as you actually teach it (daily class record) — the bar above tracks syllabus coverage for this subject.</div>
+      </div>
+    </div>
+
+    <div id="soPaneCOs" style="display:none;">
+      <div class="field">
+        <label>Course Outcomes <button type="button" class="link-btn" id="addCoBtn" style="float:right;">+ Add CO</button></label>
+        <div id="coRows"></div>
+      </div>
+    </div>
+
+    <div id="soPaneAttainment" style="display:none;">
+      <div style="display:flex;align-items:center;font-weight:700;font-size:13px;margin-bottom:8px;">CO–PO/PSO Attainment
+        <details class="info-tip"><summary title="What is this?">i</summary>
+          <div class="info-tip-body">Mapping strength 0–3 (0 = none, 3 = strong) for each CO against every PO/PSO. The Attainment Value is this subject's overall average.</div>
+        </details>
+      </div>
+      <div style="overflow-x:auto;">
+        <table id="attainmentTable" style="border-collapse:collapse;font-size:12.5px;width:100%;"></table>
+      </div>
+      <div class="field" style="margin-top:12px;">
+        <label>Overall Attainment Value</label>
+        <div id="overallAttainmentValue" style="font-size:22px;font-weight:800;"></div>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button type="button" class="btn btn-primary" id="subjectOutcomesDoneBtn">Done</button>
+    </div>
+  </div>
+</div>
+
+<!-- Add / Edit Subject -->
+<div class="sheet-overlay" id="subjectFormOverlay">
+  <div class="sheet" style="max-width:420px;">
+    <div class="sheet-head">
+      <h2 id="subjectFormTitle">Add Subject</h2>
+      <button class="icon-btn" data-close="subjectFormOverlay">✕</button>
+    </div>
+    <form id="subjectForm">
+      <div class="field">
+        <label>Subject Code</label>
+        <input type="text" id="sf_code" placeholder="e.g. 24AM501" autocomplete="off">
+        <div class="field-error" id="sf_err_code"></div>
+      </div>
+      <div class="field">
+        <label>Subject Name</label>
+        <input type="text" id="sf_name" placeholder="e.g. Machine Learning" autocomplete="off">
+        <div class="field-error" id="sf_err_name"></div>
+      </div>
+      <div class="field-row">
+        <div class="field">
+          <label>Credit</label>
+          <input type="number" id="sf_credit" min="0" max="10" step="0.5" placeholder="e.g. 3">
+        </div>
+        <div class="field">
+          <label>Type</label>
+          <select id="sf_type">
+            <option value="Theory">Theory</option>
+            <option value="Lab">Lab</option>
+            <option value="Integrated">Integrated</option>
+            <option value="Elective">Elective</option>
+          </select>
+        </div>
+      </div>
+      <div class="field">
+        <label>L - T - P (Lecture - Tutorial - Practical hours/week, as in syllabus)</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;">
+          <input type="number" id="sf_l" min="0" max="10" step="1" placeholder="L">
+          <input type="number" id="sf_t" min="0" max="10" step="1" placeholder="T">
+          <input type="number" id="sf_p" min="0" max="10" step="1" placeholder="P">
+        </div>
+      </div>
+      <div class="field">
+        <label>Weekly Timetable Periods <span style="font-weight:400;color:var(--text-dim);">(used by the timetable generator — auto = L+T+P, override if needed)</span></label>
+        <input type="number" id="sf_periods" min="0" max="20" step="1" placeholder="e.g. 4">
+      </div>
+      <div class="sheet-actions">
+        <button type="button" class="btn btn-ghost" data-close="subjectFormOverlay">Cancel</button>
+        <button type="submit" class="btn btn-primary">Save</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Missing Data Report -->
+<div class="sheet-overlay" id="missingOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>⚠️ Missing Data</h2>
+      <button class="icon-btn" data-close="missingOverlay">✕</button>
+    </div>
+    <div class="field-row" style="margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--text-dim);grid-column:1/-1;">
+        <input type="checkbox" id="missingScopeAll" style="width:auto;">
+        Show across all departments &amp; years
+      </label>
+    </div>
+    <div id="missingSummary" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <div id="missingList"></div>
+  </div>
+</div>
+
+<!-- Arrears Report -->
+<div class="sheet-overlay" id="arrearsReportOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>📕 Students With Arrears</h2>
+      <button class="icon-btn" data-close="arrearsReportOverlay">✕</button>
+    </div>
+    <div class="field-row" style="margin-bottom:10px;">
+      <label style="display:flex;align-items:center;gap:8px;font-size:13.5px;font-weight:600;color:var(--text-dim);grid-column:1/-1;">
+        <input type="checkbox" id="arrearsScopeAll" style="width:auto;">
+        Show across all departments &amp; years
+      </label>
+    </div>
+    <div id="arrearsSummary" style="font-size:13px;color:var(--text-dim);margin-bottom:10px;"></div>
+    <div id="arrearsList"></div>
+  </div>
+</div>
+
+<!-- Leave & OD Report -->
+<div class="sheet-overlay" id="leaveReportOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>🗓️ Leave &amp; OD Report</h2>
+      <button class="icon-btn" data-close="leaveReportOverlay">✕</button>
+    </div>
+    <div class="tabs" style="margin-bottom:10px;">
+      <button type="button" class="tab active" id="lrTabStudents">Students</button>
+      <button type="button" class="tab" id="lrTabFaculty">Faculty</button>
+    </div>
+    <div class="field-row" style="margin-bottom:10px;">
+      <div class="field">
+        <label>Department</label>
+        <select id="lrDept"></select>
+      </div>
+      <div class="field" id="lrYearField">
+        <label>Year</label>
+        <select id="lrYear"></select>
+      </div>
+    </div>
+    <div id="lrList"></div>
+  </div>
+</div>
+
+<!-- Principal Report -->
+<div class="sheet-overlay" id="principalReportOverlay">
+  <div class="sheet" style="max-width:680px;">
+    <div class="sheet-head">
+      <h2>📨 Report</h2>
+      <button class="icon-btn" data-close="principalReportOverlay">✕</button>
+    </div>
+    <div class="field-row" style="margin-bottom:10px;">
+      <div class="field">
+        <label>Department</label>
+        <select id="prDept"></select>
+      </div>
+      <div class="field">
+        <label>Date</label>
+        <input type="date" id="prDate">
+      </div>
+      <div class="field">
+        <label>Continuous leave — days</label>
+        <input type="number" id="prLeaveDays" value="3" min="1" max="30">
+      </div>
+      <div class="field">
+        <label>Low attendance — below %</label>
+        <input type="number" id="prLowPct" value="75" min="1" max="100">
+      </div>
+    </div>
+    <div class="field">
+      <label>Years to include <button type="button" class="link-btn" id="prYearsAllBtn" style="float:right;">All / None</button></label>
+      <div id="prYearsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;"></div>
+      <div class="arrear-count-note">Pick any combination — defaults to 2nd Year onward.</div>
+    </div>
+    <div class="field">
+      <label>Periods to include <button type="button" class="link-btn" id="prPeriodsAllBtn" style="float:right;">All / None</button></label>
+      <div id="prPeriodsGroup" style="display:flex;flex-wrap:wrap;gap:10px;padding:10px;border:1px solid var(--border);border-radius:10px;"></div>
+      <div class="arrear-count-note">Pick any combination — e.g. just 1st, 4th and 6th hour.</div>
+    </div>
+    <div class="field-error" id="prErr" style="margin-bottom:8px;"></div>
+    <div class="dash-quick-actions" style="margin-bottom:12px;">
+      <button class="btn btn-primary" id="prGenerateBtn">📨 Generate Report</button>
+    </div>
+    <div id="prOutput" style="font-size:13.5px;line-height:1.6;white-space:pre-wrap;background:var(--surface-2);border-radius:10px;padding:12px;min-height:60px;"></div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div class="undo-bar" id="undoBar">
+  <span id="undoBarMsg"></span>
+  <button type="button" id="undoBarBtn">Undo</button>
+</div>
+
+<!-- ============================================================
+     FIREBASE REAL-TIME SYNC
+     ============================================================
+     Turns this from a single-device app into a shared one: every
+     device that signs in reads/writes the SAME Firestore document,
+     and Firestore pushes changes to every other open device live.
+
+     SETUP (see the assistant's step-by-step in chat for the exact
+     clicks):
+       1. Create a Firebase project → enable Firestore (Native mode)
+          → enable Authentication → Email/Password.
+       2. Project settings → Your apps → add a Web app → copy the
+          firebaseConfig object shown there → paste it in place of
+          the placeholder below.
+       3. In Firestore → Rules, paste:
+
+            rules_version = '2';
+            service cloud.firestore {
+              match /databases/{database}/documents {
+                match /orgs/{orgId} {
+                  allow read, write: if request.auth != null;
+                }
+                match /users/{userId} {
+                  allow read: if request.auth != null;
+                  allow write: if request.auth != null && request.auth.uid == userId;
+                }
+              }
+            }
+
+          (This trusts any signed-in account with full read/write —
+          fine for one department's own staff. Tighten later by
+          checking each user's role doc if you need per-role write
+          limits enforced server-side too, not just hidden in the UI.)
+
+       Until a real config is pasted in below, this whole block is a
+       no-op and the app behaves exactly as before (local storage
+       only, no login screen).
+     ============================================================ -->
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.13.0/firebase-firestore-compat.js"></script>
+<script src="js/firebase-sync.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

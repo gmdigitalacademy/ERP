@@ -1,0 +1,592 @@
+:root{
+  --bg:#f5f6fa; --surface:#ffffff; --surface-2:#f0f2f7; --border:#e2e5ec;
+  --text:#151821; --text-dim:#6b7280; --accent:#2f6fed; --accent-dim:#e8effe;
+  --danger:#e0483f; --danger-dim:#fbe9e8; --good:#1f9d55; --good-dim:#e7f8ee;
+  --radius:14px; --font: -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+  box-sizing:border-box;
+  padding-top: env(safe-area-inset-top,0px);
+  padding-bottom: env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0e1117; --surface:#171b24; --surface-2:#1e232e; --border:#2a3040;
+    --text:#eef0f4; --text-dim:#9aa3b2; --accent:#5b8bf5; --accent-dim:#1c2a4a;
+    --danger:#f0645c; --danger-dim:#3a1c1c; --good:#3ecb7e; --good-dim:#123322;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0e1117; --surface:#171b24; --surface-2:#1e232e; --border:#2a3040;
+  --text:#eef0f4; --text-dim:#9aa3b2; --accent:#5b8bf5; --accent-dim:#1c2a4a;
+  --danger:#f0645c; --danger-dim:#3a1c1c; --good:#3ecb7e; --good-dim:#123322;
+}
+*{box-sizing:border-box;}
+html,body{height:100%;}
+body{
+  margin:0; font-family:var(--font); background:var(--bg); color:var(--text);
+  -webkit-font-smoothing:antialiased;
+}
+.app{max-width:1200px;margin:0 auto;padding:0 16px 48px;}
+header.top{
+  position:sticky; top:0; z-index:20; background:var(--bg);
+  padding:calc(env(safe-area-inset-top,0px) + 14px) 16px 10px;
+  margin:0 -16px; border-bottom:1px solid var(--border);
+}
+header.top .row1{display:flex;align-items:center;justify-content:space-between;gap:10px;max-width:1200px;margin:0 auto;}
+h1{font-size:19px;margin:0;font-weight:700;letter-spacing:-0.2px;}
+h1 .sub{display:block;font-size:12px;font-weight:500;color:var(--text-dim);margin-top:2px;}
+.icon-btn{
+  border:1px solid var(--border); background:var(--surface); color:var(--text);
+  width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+  cursor:pointer; font-size:16px; flex:none;
+}
+.icon-btn:active{transform:scale(0.94);}
+.tabs{display:flex;gap:6px;overflow-x:auto;max-width:1200px;margin:12px auto 0;padding-bottom:2px;scrollbar-width:none;}
+.tabs::-webkit-scrollbar{display:none;}
+.tab{
+  flex:none; padding:8px 14px; border-radius:999px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text-dim); font-size:13.5px; font-weight:600;
+  cursor:pointer; white-space:nowrap;
+}
+.tab.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.tab.add-tab{color:var(--accent); border-style:dashed;}
+.tab.dept-tab{font-weight:700;}
+.toolbar{display:flex;gap:8px;margin:14px 0;flex-wrap:wrap;align-items:center;}
+.toolbar-swipe{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding-bottom:2px;margin-top:0;}
+.toolbar-swipe::-webkit-scrollbar{display:none;}
+.toolbar-swipe .btn{flex:none;white-space:nowrap;}
+.search-wrap{position:relative;flex:1;min-width:180px;}
+.search-wrap input{
+  width:100%; padding:10px 12px 10px 34px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); font-size:14px;
+}
+.search-wrap::before{content:"🔍";position:absolute;left:10px;top:50%;transform:translateY(-50%);font-size:13px;opacity:0.6;}
+select.filter{
+  padding:10px 10px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface); color:var(--text); font-size:13.5px;
+}
+.btn{
+  padding:10px 16px; border-radius:10px; border:none; font-weight:600; font-size:14px;
+  cursor:pointer; display:inline-flex; align-items:center; gap:6px;
+}
+.btn-primary{background:var(--accent); color:#fff;}
+.btn-primary:active{opacity:0.85;}
+.btn-ghost{background:var(--surface); color:var(--text); border:1px solid var(--border);}
+.stats{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;}
+.stat{
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  padding:10px 14px; flex:1; min-width:110px;
+}
+.stat b{display:block;font-size:20px;line-height:1.2;}
+.stat span{font-size:11.5px;color:var(--text-dim);text-transform:uppercase;letter-spacing:0.4px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(310px,1fr));gap:12px;}
+.card{
+  background:var(--surface); border:1px solid var(--border); border-radius:var(--radius);
+  padding:14px 16px; cursor:pointer; transition:border-color .15s;
+}
+.card:active{border-color:var(--accent);}
+.card-top{display:flex;justify-content:space-between;align-items:flex-start;gap:8px;}
+.card-name{font-weight:700;font-size:15.5px;}
+.card-reg{font-size:11.5px;color:var(--text-dim);margin-top:2px;font-variant-numeric:tabular-nums;}
+.badge{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;white-space:nowrap;}
+.badge-hostel{background:var(--accent-dim);color:var(--accent);}
+.card-meta{margin-top:10px;display:flex;flex-wrap:wrap;gap:8px;font-size:12.5px;color:var(--text-dim);}
+.chip{background:var(--surface-2);padding:4px 8px;border-radius:8px;}
+.chip.cgpa-good{color:var(--good);background:var(--good-dim);font-weight:700;}
+.chip.cgpa-bad{color:var(--danger);background:var(--danger-dim);font-weight:700;}
+.chip.arr-bad{color:var(--danger);background:var(--danger-dim);font-weight:700;}
+.empty{text-align:center;padding:60px 20px;color:var(--text-dim);}
+.empty div.emoji{font-size:38px;margin-bottom:10px;}
+
+.fab{
+  position:fixed; right:20px; bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  width:56px;height:56px;border-radius:50%; background:var(--accent); color:#fff;
+  border:none; font-size:26px; box-shadow:0 6px 18px rgba(0,0,0,0.25); cursor:pointer; z-index:30;
+  display:flex;align-items:center;justify-content:center;
+}
+.fab:active{transform:scale(0.93);}
+.fab{transition:transform .2s ease, opacity .2s ease;}
+.fab.fab-hidden{transform:translateY(80px) scale(0.9); opacity:0; pointer-events:none;}
+
+.sheet-overlay{
+  position:fixed; inset:0; height:var(--vvh, 100vh); background:rgba(0,0,0,0.45); z-index:100;
+  display:none; align-items:flex-end; justify-content:center;
+}
+.sheet-overlay.open{display:flex;}
+#addItemOverlay{z-index:150;} /* opens on top of another already-open sheet (e.g. adding an OD type mid-attendance) */
+#ttSlotOverlay{z-index:150;} /* opens on top of Master/Faculty Timetable so a cell can be edited directly */
+.mtt-cell.mtt-editable{cursor:pointer;}
+.mtt-cell.mtt-editable:active{background:var(--accent-dim);}
+.sheet{
+  background:var(--surface); width:100%; max-width:560px; border-radius:20px 20px 0 0;
+  max-height:min(92vh, calc(var(--vvh, 100vh) - 16px)); overflow-y:auto; padding:18px 18px calc(24px + env(safe-area-inset-bottom,0px));
+  animation:slideUp .22s ease-out;
+}
+@media (min-width:640px){
+  .sheet-overlay{align-items:center;}
+  .sheet{border-radius:18px; max-height:min(88vh, calc(var(--vvh, 100vh) - 16px));}
+}
+@keyframes slideUp{from{transform:translateY(30px);opacity:0;}to{transform:translateY(0);opacity:1;}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px;position:sticky;top:0;background:var(--surface);padding-top:2px;}
+.sheet-head h2{font-size:17px;margin:0;}
+.field{margin-bottom:12px;}
+.field label{display:block;font-size:12.5px;font-weight:600;color:var(--text-dim);margin-bottom:5px;}
+.field input,.field select,.field textarea{
+  width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--border);
+  background:var(--surface-2); color:var(--text); font-size:14.5px; font-family:inherit;
+}
+.field textarea{resize:vertical;min-height:56px;}
+.field-error{display:none;color:var(--danger);font-size:12px;margin-top:4px;font-weight:600;}
+.field-error.show{display:block;}
+.field input.invalid,.field select.invalid,.field textarea.invalid{border-color:var(--danger);background:var(--danger-dim);}
+/* Stops the browser's own autofill/"suggested value" tint (a different
+   background + bold text) from making one field in a row look like a
+   different size/style to its neighbors — force our own colors back in. */
+.field input:-webkit-autofill,.field input:-webkit-autofill:hover,.field input:-webkit-autofill:focus{
+  -webkit-text-fill-color:var(--text);
+  -webkit-box-shadow:0 0 0px 1000px var(--surface-2) inset;
+  box-shadow:0 0 0px 1000px var(--surface-2) inset;
+  transition:background-color 9999s ease-in-out 0s;
+}
+.missing-row{padding:10px 0;border-bottom:1px solid var(--border);}
+.missing-row:last-child{border-bottom:none;}
+.missing-row .mr-top{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap;}
+.missing-row .mr-name{font-weight:700;font-size:14px;}
+.missing-row .mr-loc{font-size:11.5px;color:var(--text-dim);}
+.missing-row .mr-chips{margin-top:6px;display:flex;flex-wrap:wrap;gap:6px;}
+.missing-row .mr-chip{font-size:11px;font-weight:600;padding:3px 8px;border-radius:999px;background:var(--danger-dim);color:var(--danger);}
+.arrear-list{margin-top:8px;}
+.arrear-card{border:1px solid var(--border);border-radius:10px;padding:10px;margin-bottom:8px;background:var(--surface-2);}
+.arrear-row{display:grid;grid-template-columns:1fr 1.4fr auto;gap:8px;margin-bottom:8px;align-items:center;}
+.arrear-row2{display:grid;grid-template-columns:0.8fr 0.7fr 1.5fr;gap:8px;}
+.arrear-row input, .arrear-row2 input{width:100%;padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface);color:var(--text);font-size:13.5px;}
+.arrear-row .rm-arrear{background:var(--danger-dim);color:var(--danger);border:none;border-radius:8px;width:34px;height:34px;font-size:16px;cursor:pointer;flex:none;}
+.add-arrear-btn{background:none;border:1px dashed var(--border);color:var(--accent);border-radius:9px;padding:8px 12px;font-size:13px;font-weight:600;cursor:pointer;width:100%;}
+.arrear-count-note{font-size:11.5px;color:var(--text-dim);margin-top:4px;}
+.subject-row{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);}
+.subject-row:last-child{border-bottom:none;}
+.subject-row .sr-info{min-width:0;}
+.subject-row .sr-code{font-size:11.5px;color:var(--text-dim);font-weight:700;letter-spacing:0.3px;}
+.subject-row .sr-name{font-size:14px;font-weight:600;margin-top:1px;}
+.subject-row .sr-actions{display:flex;gap:6px;flex:none;}
+.subject-row .sr-actions button{border:none;border-radius:8px;width:32px;height:32px;font-size:14px;cursor:pointer;}
+.subject-row .sr-edit{background:var(--accent-dim);color:var(--accent);}
+.subject-row .sr-del{background:var(--danger-dim);color:var(--danger);}
+.subject-empty{padding:24px 0;text-align:center;color:var(--text-dim);font-size:13.5px;}
+.card-sno{font-size:11px;color:var(--text-dim);font-weight:700;background:var(--surface-2);border-radius:6px;padding:2px 7px;flex:none;}
+.phone-actions{display:inline-flex;gap:5px;margin-left:2px;}
+.phone-act{display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border-radius:7px;background:var(--surface-2);text-decoration:none;font-size:12px;line-height:1;flex:none;}
+.phone-act.call{background:var(--accent-dim);}
+.phone-act.wa{background:var(--good-dim);}
+.phone-act.sms{background:var(--surface-2);}
+.phone-act:active{transform:scale(0.9);}
+.chip.phone-chip{display:inline-flex;align-items:center;gap:5px;}
+
+/* ---------- Main nav / views ---------- */
+/* The top-level app nav (Dashboard/Students/.../Settings) now looks
+   deliberately different from the in-page filter/sub-tabs (dept, year,
+   day, etc. — still the rounded pill/chip style above) so it always reads
+   as "which screen am I on", not just another row of chips. Segmented,
+   underline-style, on its own strip. */
+.main-nav{
+  margin:14px -16px 0; padding:0 16px; gap:4px;
+  background:var(--surface); border-bottom:1px solid var(--border);
+}
+.main-tab{
+  font-size:13.5px; border:none; border-radius:0; background:none;
+  padding:10px 12px 9px; border-bottom:3px solid transparent; color:var(--text-dim);
+}
+.main-tab.active{
+  background:none; color:var(--accent); border-bottom-color:var(--accent); font-weight:800;
+}
+/* Second row of pill tabs for the screens inside whichever group is active
+   (e.g. People → Students / Faculties) — deliberately styled as pills
+   (.tab.active's existing blue-pill look) rather than another underline
+   strip, so it reads as "one level down" from the group tabs above it. */
+.sub-nav{ margin:10px -16px 0; padding:0 16px 10px; }
+.sub-tab{ font-size:12.5px; padding:7px 12px; }
+.view{padding-top:2px;}
+.dash-section{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin:14px 0;}
+.dash-section-head{font-weight:700;font-size:14.5px;margin-bottom:12px;}
+/* Collapsible dashboard sections (native <details>/<summary>) — closed by
+   default so the heaviest, least-glanced-at breakdowns don't add clutter
+   or get computed until someone actually opens them. */
+.dash-collapsible{padding:14px 16px;}
+.dash-collapsible summary.dash-section-head{cursor:pointer;list-style:none;margin-bottom:0;user-select:none;}
+.dash-collapsible summary.dash-section-head::-webkit-details-marker{display:none;}
+.dash-collapsible summary.dash-section-head::before{content:'▸';display:inline-block;margin-right:8px;transition:transform .15s ease;color:var(--text-dim);}
+.dash-collapsible[open] summary.dash-section-head::before{transform:rotate(90deg);}
+.dash-collapsible[open] summary.dash-section-head{margin-bottom:12px;}
+
+/* Tiny "ⓘ" info disclosure — replaces a permanently-visible paragraph of
+   explainer text with a small tappable icon; the text only shows once
+   someone actually wants it. Reusable anywhere via <details class="info-tip">
+   <summary>i</summary><div class="info-tip-body">…</div></details>. */
+.info-tip{display:inline-block;position:relative;vertical-align:middle;margin-left:6px;}
+.info-tip summary{
+  display:inline-flex;align-items:center;justify-content:center;width:16px;height:16px;
+  border-radius:50%;border:1px solid var(--text-dim);color:var(--text-dim);
+  font-size:10px;font-style:italic;font-weight:700;font-family:Georgia,serif;
+  cursor:pointer;list-style:none;user-select:none;
+}
+.info-tip summary::-webkit-details-marker{display:none;}
+.info-tip[open] summary{background:var(--text-dim);color:var(--surface);}
+.info-tip-body{
+  position:absolute;left:0;top:22px;z-index:20;width:260px;max-width:70vw;
+  background:var(--surface-2);border:1px solid var(--border);border-radius:10px;
+  padding:10px 12px;font-size:12px;font-weight:400;color:var(--text-dim);
+  box-shadow:0 6px 18px rgba(0,0,0,0.2);
+}
+.dash-quick-actions{display:flex;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;gap:10px;scrollbar-width:none;padding-bottom:2px;}
+.dash-quick-actions::-webkit-scrollbar{display:none;}
+.dash-quick-actions .btn{flex:none;white-space:nowrap;}
+.dash-row{display:flex;justify-content:space-between;align-items:center;padding:9px 0;border-bottom:1px solid var(--border);font-size:13.5px;gap:10px;}
+.dash-row:last-child{border-bottom:none;}
+.dash-row .dr-label{font-weight:600;}
+.dash-row .dr-sub{color:var(--text-dim);font-size:11.5px;}
+.dash-mini-stats{display:flex;gap:6px;flex-wrap:wrap;}
+.mini-stat{font-size:11px;font-weight:700;padding:3px 8px;border-radius:999px;background:var(--surface-2);}
+.mini-stat.present{background:var(--good-dim);color:var(--good);}
+.mini-stat.absent{background:var(--danger-dim);color:var(--danger);}
+.mini-stat.od{background:var(--accent-dim);color:var(--accent);}
+.no-data-note{color:var(--text-dim);font-size:13px;padding:10px 0;}
+.empty-note{color:var(--text-dim);font-size:13px;padding:10px 0;}
+/* Swipe-left-to-reveal Edit/Delete, used on today's-attendance period rows.
+   .swipe-item wraps one row: the action buttons sit behind it (absolutely
+   positioned, right-aligned), and .swipe-content (the visible .dash-row)
+   slides left over touch/mouse drag to reveal them. */
+.swipe-item{position:relative;overflow:hidden;border-bottom:1px solid var(--border);}
+.swipe-item:last-child{border-bottom:none;}
+.swipe-item .dash-row{border-bottom:none;padding:9px 0;}
+.swipe-actions{position:absolute;top:0;right:0;bottom:0;display:flex;}
+.swipe-actions button{border:none;color:#fff;font-weight:700;font-size:12px;padding:0 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;cursor:pointer;}
+.swipe-action-edit{background:#2563eb;}
+.swipe-action-share{background:#0f9d58;}
+.swipe-action-delete{background:var(--danger);}
+.swipe-content{position:relative;background:var(--surface);transition:transform .18s ease;touch-action:pan-y;will-change:transform;}
+.swipe-content.dragging{transition:none;}
+.swipe-hint{font-size:10.5px;color:var(--text-dim);text-align:right;padding:2px 2px 6px;}
+
+/* ---------- Attendance sheet ---------- */
+.att-toolbar{display:flex;gap:10px;flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;align-items:center;margin-bottom:10px;scrollbar-width:none;padding-bottom:2px;}
+.att-toolbar::-webkit-scrollbar{display:none;}
+.att-toolbar>*{flex:none;}
+.att-toolbar input[type=date]{padding:9px 10px;border-radius:9px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13.5px;}
+.att-summary{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.att-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:9px 0;border-bottom:1px solid var(--border);}
+.att-row:last-child{border-bottom:none;}
+.att-row .ar-name{font-weight:600;font-size:13.5px;min-width:0;}
+.att-row .ar-sno{font-size:11px;color:var(--text-dim);font-weight:700;margin-right:6px;}
+.att-status-group{display:flex;gap:5px;flex:none;}
+.att-status-btn{border:1px solid var(--border);background:var(--surface-2);color:var(--text-dim);font-size:11.5px;font-weight:700;padding:6px 10px;border-radius:8px;cursor:pointer;}
+.att-status-btn.p.active{background:var(--good);color:#fff;border-color:var(--good);}
+.att-status-btn.a.active{background:var(--danger);color:#fff;border-color:var(--danger);}
+.att-status-btn.od.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+.att-od-select{margin-top:6px;width:100%;padding:7px 9px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:12.5px;}
+.att-actions-row{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;}
+.att-actions-row .btn{flex:1;min-width:140px;justify-content:center;}
+
+/* ---------- HOD scope ---------- */
+.scope-dept{margin-bottom:12px;}
+.scope-dept-head{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:6px;}
+.scope-year-row{display:flex;align-items:center;gap:8px;padding:5px 0 5px 24px;font-size:13px;color:var(--text-dim);}
+
+/* ---------- Share buttons (WhatsApp / Telegram / SMS / Copy) ---------- */
+.share-btn-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px;}
+.btn-share-wa{border-color:#1e7a5e55;color:#1e7a5e;}
+.btn-share-tg{border-color:#2ea6ff55;color:#0088cc;}
+.btn-share-sms{border-color:#7a746855;color:var(--text-dim);}
+@media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .btn-share-wa{color:#3ecb7e;} :root:not([data-theme="light"]) .btn-share-tg{color:#5bc2f5;} }
+:root[data-theme="dark"] .btn-share-wa{color:#3ecb7e;}
+:root[data-theme="dark"] .btn-share-tg{color:#5bc2f5;}
+
+/* ---------- Timetable ---------- */
+.small-note{font-size:12px;color:var(--text-dim);}
+.tt-row{display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:12px;border:1px solid var(--border);background:var(--surface);margin-bottom:8px;cursor:pointer;transition:border-color .15s;}
+.tt-row:active{border-color:var(--accent);}
+.tt-row.running{border-color:var(--good);background:var(--good-dim);}
+.tt-row.is-break{background:var(--surface-2);opacity:0.75;cursor:default;}
+.tt-period-num{flex:none;width:46px;text-align:center;font-weight:800;font-size:13px;color:var(--text-dim);}
+.tt-period-time{flex:none;width:56px;font-size:10.5px;color:var(--text-dim);font-variant-numeric:tabular-nums;}
+.tt-body{flex:1;min-width:0;}
+.tt-subject{font-weight:700;font-size:14px;}
+.tt-meta{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.tt-empty-slot{color:var(--text-dim);font-style:italic;font-size:13px;}
+.tt-timing-row{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--border);}
+.tt-timing-row:last-child{border-bottom:none;}
+.tt-timing-row label{flex:none;width:64px;font-size:13px;font-weight:700;color:var(--text-dim);}
+.tt-timing-row input{flex:1;padding:8px 10px;border-radius:8px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);font-size:13.5px;}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+.sheet-actions{display:flex;gap:10px;margin-top:18px;}
+.sheet-actions .btn{flex:1;justify-content:center;}
+.detail-row{display:flex;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border);font-size:14px;gap:12px;}
+.detail-row:last-child{border-bottom:none;}
+.detail-row .k{color:var(--text-dim);flex:none;}
+.detail-row .v{text-align:right;font-weight:600;word-break:break-word;}
+.confirm-box{background:var(--danger-dim);color:var(--danger);border-radius:10px;padding:12px;font-size:13.5px;margin-top:10px;}
+.toast{
+  position:fixed; left:50%; bottom:calc(24px + env(safe-area-inset-bottom,0px)); transform:translateX(-50%);
+  background:var(--text); color:var(--bg); padding:10px 18px; border-radius:999px; font-size:13.5px;
+  font-weight:600; z-index:200; opacity:0; pointer-events:none; transition:opacity .2s, bottom .2s;
+}
+.toast.show{opacity:1; bottom:calc(40px + env(safe-area-inset-bottom,0px));}
+.link-btn{background:none;border:none;color:var(--accent);font-weight:600;font-size:13.5px;cursor:pointer;padding:6px 0;}
+
+/* ---- Corner collapse toggle (added to every .dash-section) ---- */
+.dash-section-head{position:relative;}
+.dash-section-head::after{content:"";display:table;clear:both;}
+.collapse-toggle{
+  float:right; margin-left:10px; background:var(--surface-2); border:1px solid var(--border);
+  color:var(--text-dim); width:26px;height:26px;border-radius:8px;cursor:pointer;font-size:12px;
+  display:inline-flex;align-items:center;justify-content:center;flex:none;line-height:1;
+}
+.collapse-toggle:active{transform:scale(0.92);}
+
+/* ---- Premium progress-ring donuts ---- */
+.donut-svg{filter:drop-shadow(0 3px 10px rgba(0,0,0,0.16));}
+
+/* ---- Header institution info ---- */
+#headerInstitutionInfo{
+  text-align:center;font-size:12px;font-weight:600;color:var(--text-dim);
+  margin-top:6px;letter-spacing:0.2px;
+}
+
+/* ---- Settings: font size control ---- */
+.font-scale-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+.font-scale-row .btn{min-width:44px;justify-content:center;}
+#fontScaleLabel{font-weight:800;min-width:52px;text-align:center;font-size:15px;}
+
+/* ---- User manual ---- */
+#manualBody details{border:1px solid var(--border);border-radius:10px;padding:10px 12px;margin-bottom:8px;background:var(--surface-2);}
+#manualBody summary{font-weight:700;cursor:pointer;font-size:13.5px;}
+#manualBody p{margin:8px 0 2px;font-size:13px;color:var(--text-dim);line-height:1.55;}
+#manualBody ul{margin:6px 0 2px;padding-left:18px;font-size:13px;color:var(--text-dim);line-height:1.6;}
+
+/* ---- Master / Faculty timetable grids ---- */
+#masterTtTable th, #masterTtTable td, #facTtTable th, #facTtTable td{
+  border:1px solid var(--border); padding:6px 8px; text-align:center; vertical-align:top; white-space:nowrap;
+}
+#masterTtTable th, #facTtTable th{background:var(--surface-2); font-weight:700;}
+#masterTtTable td.mtt-cell, #facTtTable td.mtt-cell{white-space:normal; min-width:100px; font-size:11px;}
+#masterTtTable td.mtt-subj, #facTtTable td.mtt-subj{font-weight:700;}
+#masterTtTable td.mtt-empty, #facTtTable td.mtt-empty{color:var(--text-dim);}
+
+/* ---- Donut drill-down details ---- */
+.donut-details-wrap{flex-basis:100%;width:100%;margin-top:4px;}
+.donut-details-toggle{font-size:12px;font-weight:700;display:inline-flex;align-items:center;gap:6px;}
+.donut-details-toggle .dd-arrow{display:inline-block;transition:transform .15s;font-size:10px;}
+.donut-details-toggle.open .dd-arrow{transform:rotate(90deg);}
+.donut-details-panel{margin-top:8px;border:1px solid var(--border);border-radius:12px;padding:10px 12px;background:var(--surface-2);max-height:280px;overflow:auto;text-align:left;}
+.donut-detail-group{margin-bottom:12px;}
+.donut-detail-group:last-child{margin-bottom:0;}
+.donut-detail-group-head{font-size:12px;font-weight:800;margin-bottom:6px;}
+.donut-detail-item{display:flex;flex-wrap:wrap;align-items:center;gap:6px;font-size:12.5px;padding:5px 0;border-bottom:1px dashed var(--border);}
+.donut-detail-item:last-child{border-bottom:none;}
+.donut-detail-item .dd-sub{color:var(--text-dim);font-size:11px;}
+.donut-detail-item[data-id]{cursor:pointer;margin:0 -8px;padding:5px 8px;border-radius:8px;}
+.donut-detail-item[data-id]:hover, .donut-detail-item[data-id]:active{background:var(--surface-2);}
+.donut-detail-year-head{font-size:11px;font-weight:700;letter-spacing:0.2px;color:var(--text-dim);text-transform:uppercase;margin:10px 0 2px;}
+.donut-detail-year-head:first-child{margin-top:2px;}
+.donut-od-reason{margin-left:auto;font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:var(--accent-dim);color:var(--accent);white-space:nowrap;}
+.donut-od-summary{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;}
+.donut-od-summary span{font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--accent-dim);color:var(--accent);}
+
+/* ---- Task Checklist ---- */
+.task-row{display:flex;align-items:flex-start;gap:10px;padding:11px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.task-row:last-child{border-bottom:none;}
+.task-row .tr-main{flex:1;}
+.task-row .tr-title{font-weight:700;font-size:13.5px;}
+.task-row.completed .tr-title{text-decoration:line-through;color:var(--text-dim);}
+.task-row .tr-remarks{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.task-row .tr-deadline{font-size:11px;color:var(--text-dim);margin-top:3px;}
+.task-row .tr-deadline.overdue{color:var(--danger);font-weight:700;}
+.task-status-badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 9px;border-radius:999px;flex:none;white-space:nowrap;}
+.task-status-badge.not_started{background:var(--text-dim);color:#fff;opacity:.75;}
+.task-status-badge.in_progress{background:#e0942c22;color:#e0942c;}
+.task-status-badge.completed{background:var(--good-dim,#e8f8f0);color:var(--good);}
+
+/* ---- Diary / Event Calendar ---- */
+.cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-top:8px;}
+.cal-dow{font-size:10.5px;font-weight:700;color:var(--text-dim);text-align:center;padding:4px 0;}
+.cal-day{position:relative;min-height:44px;border-radius:10px;background:var(--surface-2);border:1px solid var(--border);display:flex;flex-direction:column;align-items:center;justify-content:flex-start;padding:5px 2px 8px;cursor:pointer;font-size:12px;font-weight:600;gap:3px;}
+.cal-day.blank{background:transparent;border-color:transparent;cursor:default;}
+.cal-day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent) inset;}
+.cal-day.selected{background:var(--accent);color:#fff;}
+.cal-day .cal-dots{display:flex;gap:2px;flex-wrap:wrap;justify-content:center;max-width:36px;}
+.cal-day .cal-dot{width:5px;height:5px;border-radius:50%;}
+.diary-type-badge{display:inline-block;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:999px;margin-right:6px;}
+.diary-entry-row{display:flex;align-items:flex-start;gap:10px;padding:10px 0;border-bottom:1px solid var(--border);cursor:pointer;}
+.diary-entry-row:last-child{border-bottom:none;}
+.diary-entry-row .de-time{font-size:11.5px;color:var(--text-dim);font-weight:700;min-width:52px;}
+.diary-entry-row .de-title{font-weight:700;font-size:13.5px;}
+.diary-entry-row .de-notes{font-size:12px;color:var(--text-dim);margin-top:2px;}
+.cal-legend .leg-dot{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:4px;vertical-align:middle;}
+
+/* ---- Version history ---- */
+.history-entry{padding:10px 0;border-bottom:1px solid var(--border);}
+.history-entry:last-child{border-bottom:none;}
+.history-entry .hv{font-weight:800;font-size:14px;}
+.history-entry .hn{font-size:13px;color:var(--text-dim);margin-top:3px;line-height:1.5;}
+
+/* ---- Firebase real-time sync: login screen + role gating ---- */
+.role-faculty .hod-only{display:none !important;}
+#authOverlay{z-index:500;}
+#authOverlay .sheet{max-width:400px;}
+.auth-tabs{display:flex;gap:8px;margin-bottom:14px;}
+.auth-tabs button{flex:1;padding:9px;border-radius:10px;border:1px solid var(--border);background:var(--surface-2);color:var(--text);cursor:pointer;font-weight:700;font-size:13px;}
+.auth-tabs button.active{background:var(--accent);color:#fff;border-color:var(--accent);}
+#authError{color:var(--danger);font-size:12.5px;margin-top:6px;min-height:1.2em;font-weight:600;}
+#authStatus{color:var(--text-dim);font-size:12.5px;text-align:center;margin-top:10px;min-height:1.2em;}
+#cloudSignOutBtn,#cloudSignInBtn{background:var(--surface);border:1px solid var(--border);color:var(--text-dim);font-size:11px;padding:5px 8px;border-radius:20px;cursor:pointer;white-space:nowrap;flex:none;}
+
+/* =====================================================================
+   DESIGN REFRESH — a single pass to make the whole app read as one
+   consistent, polished system instead of a stack of separately-built
+   screens: real depth (soft shadows instead of flat borders), a clearer
+   type/spacing rhythm, visible press/hover feedback everywhere, and a
+   colored accent bar on every section head so screens are easy to scan.
+   Deliberately layered AFTER every rule above so it wins the cascade
+   without having to touch each older selector individually.
+   ===================================================================== */
+:root{
+  --shadow-1:0 1px 2px rgba(15,18,30,0.05), 0 1px 1px rgba(15,18,30,0.04);
+  --shadow-2:0 4px 14px rgba(15,18,30,0.08), 0 1px 3px rgba(15,18,30,0.06);
+  --shadow-3:0 10px 30px rgba(15,18,30,0.16), 0 2px 8px rgba(15,18,30,0.08);
+  --ease:cubic-bezier(.2,.7,.3,1);
+}
+:root[data-theme="dark"]{
+  --shadow-1:0 1px 2px rgba(0,0,0,0.28), 0 1px 1px rgba(0,0,0,0.22);
+  --shadow-2:0 4px 14px rgba(0,0,0,0.36), 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-3:0 10px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.36);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --shadow-1:0 1px 2px rgba(0,0,0,0.28), 0 1px 1px rgba(0,0,0,0.22);
+    --shadow-2:0 4px 14px rgba(0,0,0,0.36), 0 1px 3px rgba(0,0,0,0.3);
+    --shadow-3:0 10px 30px rgba(0,0,0,0.5), 0 2px 8px rgba(0,0,0,0.36);
+  }
+}
+
+body{ letter-spacing:-0.1px; }
+* { scrollbar-width:thin; }
+.app{ padding-bottom:64px; }
+
+/* -- Header: subtle depth so content reads as "underneath" it -- */
+header.top{ box-shadow:0 1px 0 var(--border), var(--shadow-1); }
+h1{ letter-spacing:-0.4px; }
+
+/* -- Nav tabs: firmer active state, gentle press feedback -- */
+.main-tab{ transition:color .15s var(--ease), border-color .15s var(--ease); font-weight:600; }
+.main-tab:active{ opacity:0.7; }
+.tab{ transition:background .15s var(--ease), color .15s var(--ease), border-color .15s var(--ease), transform .1s var(--ease); }
+.tab:active{ transform:scale(0.96); }
+.tab.active{ box-shadow:var(--shadow-1); }
+
+/* -- Buttons: real elevation + press feedback instead of a flat block -- */
+.btn{ transition:transform .12s var(--ease), box-shadow .15s var(--ease), opacity .12s var(--ease), background .15s var(--ease); box-shadow:var(--shadow-1); }
+.btn:active{ transform:scale(0.97); }
+.btn-primary{ box-shadow:0 3px 10px color-mix(in srgb, var(--accent) 38%, transparent), var(--shadow-1); }
+.btn-primary:active{ box-shadow:0 1px 4px color-mix(in srgb, var(--accent) 30%, transparent); }
+.btn-ghost:active{ background:var(--surface-2); }
+.icon-btn{ transition:transform .12s var(--ease), background .15s var(--ease); }
+.icon-btn:active{ background:var(--surface-2); }
+.link-btn{ transition:opacity .12s var(--ease); border-radius:6px; }
+.link-btn:active{ opacity:0.6; }
+
+/* -- Cards, stats and sections: soft shadow instead of a flat border,
+      so grouped content actually looks grouped and lifts off the page -- */
+.card, .stat, .dash-section{ box-shadow:var(--shadow-1); transition:box-shadow .15s var(--ease), border-color .15s var(--ease), transform .12s var(--ease); }
+.card:active{ box-shadow:var(--shadow-2); transform:translateY(-1px); }
+.stat{ text-align:center; }
+.stat b{ font-size:22px; color:var(--text); }
+
+/* -- Section heads: a short accent bar so every screen has the same clear
+      "this is a titled group of content" anchor, instead of plain bold text -- */
+.dash-section-head{
+  font-size:14.5px; letter-spacing:-0.1px; padding-left:11px; position:relative;
+}
+.dash-section-head::before{
+  content:''; position:absolute; left:0; top:1px; bottom:1px; width:4px; border-radius:4px;
+  background:var(--accent);
+}
+.dash-collapsible summary.dash-section-head::before{ display:none; } /* the ▸ arrow already anchors these */
+.dash-collapsible summary.dash-section-head{ padding-left:0; }
+
+/* -- Inputs: clearer focus state (accessibility + feels more "alive") -- */
+input, select, textarea{ transition:border-color .15s var(--ease), box-shadow .15s var(--ease); }
+input:focus, select:focus, textarea:focus{
+  outline:none; border-color:var(--accent) !important;
+  box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
+}
+.search-wrap input:focus{ box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent); }
+
+/* -- Sheets/modals: real elevation so they clearly float above the dimmed
+      background instead of just sitting on a dark overlay -- */
+.sheet{ box-shadow:var(--shadow-3); }
+.sheet-head h2{ letter-spacing:-0.2px; }
+
+/* -- FAB: a touch more presence -- */
+.fab{ box-shadow:var(--shadow-3); }
+
+/* -- Undo bar: a brief, dismissable "Deleted — Undo" strip, so a single
+      wrong delete (student, faculty, or a bulk batch) doesn't require a
+      full Backup restore to fix. -- */
+.undo-bar{
+  position:fixed; left:16px; right:16px; bottom:calc(20px + env(safe-area-inset-bottom,0px));
+  max-width:480px; margin:0 auto; background:var(--text); color:var(--bg);
+  border-radius:12px; padding:12px 14px; display:flex; align-items:center; justify-content:space-between;
+  gap:14px; z-index:250; box-shadow:var(--shadow-3); font-size:13.5px; font-weight:600;
+  transform:translateY(140%); opacity:0; transition:transform .25s var(--ease), opacity .25s var(--ease); pointer-events:none;
+}
+.undo-bar.show{ transform:translateY(0); opacity:1; pointer-events:auto; }
+.undo-bar #undoBarBtn{
+  background:var(--accent); color:#fff; border:none; padding:8px 16px; border-radius:8px;
+  font-weight:700; font-size:13px; cursor:pointer; flex:none;
+}
+.undo-bar #undoBarBtn:active{ transform:scale(0.95); }
+
+/* -- Bulk select bar (Students / Faculties) -- */
+.bulk-bar{
+  position:sticky; bottom:calc(12px + env(safe-area-inset-bottom,0px)); z-index:40;
+  margin:14px 0 0; background:var(--surface); border:1px solid var(--border); box-shadow:var(--shadow-3);
+  border-radius:14px; padding:10px 14px; display:flex; align-items:center; justify-content:space-between;
+  gap:10px; flex-wrap:wrap; font-size:13.5px; font-weight:700;
+}
+.bulk-bar-actions{ display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+.bulk-bar select{ padding:8px 10px; border-radius:8px; border:1px solid var(--border); background:var(--surface-2); color:var(--text); font-size:12.5px; }
+.card-select-check{ width:20px; height:20px; flex:none; margin-top:2px; accent-color:var(--accent); }
+.card.bulk-selected{ border-color:var(--accent); box-shadow:0 0 0 2px var(--accent) inset, var(--shadow-2); }
+
+/* -- Empty states: a little more visual warmth than plain gray text -- */
+.empty, .no-data-note, .empty-note{ line-height:1.6; }
+.empty div.emoji{ opacity:0.55; }
+
+/* -- Mini-stat chips / badges: consistent weight & letter-spacing -- */
+.mini-stat, .badge, .chip{ letter-spacing:0.1px; }
+
+/* -- Dark mode: cards get a faint lighter border so they separate from the
+      near-black background even where a shadow alone won't read clearly -- */
+:root[data-theme="dark"] .card, :root[data-theme="dark"] .dash-section, :root[data-theme="dark"] .stat,
+:root[data-theme="dark"] .sheet{ border-color:var(--border); }
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]) .swipe-action-edit{ filter:brightness(0.95); }
+}
+
+/* -- "⋯ More" overflow menu: tucks less-used toolbar buttons behind one
+      tap instead of crowding the row. A native <details> so it needs no
+      JS to open/close; a small script only closes it again after a pick
+      and when tapping elsewhere. -- */
+.more-menu{ position:relative; display:inline-block; flex:none; }
+.more-menu > summary{ list-style:none; cursor:pointer; user-select:none; }
+.more-menu > summary::-webkit-details-marker{ display:none; }
+.more-menu-body{
+  position:absolute; top:calc(100% + 6px); right:0; z-index:40;
+  display:flex; flex-direction:column; gap:2px; min-width:190px;
+  background:var(--surface); border:1px solid var(--border); border-radius:12px;
+  box-shadow:var(--shadow-2); padding:6px;
+}
+.more-menu-body button{
+  display:flex; align-items:center; gap:8px; width:100%; text-align:left;
+  padding:9px 10px; border:none; background:none; color:var(--text);
+  font:inherit; font-size:13.5px; font-weight:600; border-radius:8px; cursor:pointer;
+}
+.more-menu-body button:hover, .more-menu-body button:active{ background:var(--surface-2); }
